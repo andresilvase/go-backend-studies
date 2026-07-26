@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: transactions-lab
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transactions_lab
+    ports:
+      - "5432:5432"
+    volumes:
+      - transactions_data:/var/lib/postgresql/data
+
+volumes:
+  transactions_data:

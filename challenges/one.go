@@ -12,14 +12,14 @@ func One(ctx context.Context, db *sql.DB) {
 	userID, walletID, err := createUserWithWallet(ctx, User{Name: "John Doe"}, db)
 
 	if err != nil {
-		log.Fatalf("Error creating user and wallet:\n%v", err)
+		log.Fatalf("error creating user and wallet:\n%v", err)
 	}
 
 	fmt.Printf("User created with ID: %+v\n", userID)
 	fmt.Printf("Wallet created with ID: %+v\n", walletID)
 }
 
-func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int16, int16, error) {
+func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int64, int64, error) {
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -31,10 +31,8 @@ func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int16, in
 	userID, err := createUser(ctx, user, tx)
 
 	if err != nil {
-		return -1, -1, fmt.Errorf("Error creating user: %v", err)
+		return -1, -1, fmt.Errorf("error creating user: %w", err)
 	}
-
-	log.Printf("User created with ID: %+v\n", userID)
 
 	walletID, err := createWallet(ctx, Wallet{UserID: userID, Balance: 0}, tx)
 
@@ -42,18 +40,16 @@ func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int16, in
 		return -1, -1, err
 	}
 
-	log.Printf("Wallet created for user ID: %+v\n", userID)
-
 	if err = tx.Commit(); err != nil {
-		return -1, -1, fmt.Errorf("Error committing transaction: %w", err)
+		return -1, -1, fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	return userID, walletID, nil
 }
 
-func createUser(ctx context.Context, user User, tx *sql.Tx) (int16, error) {
+func createUser(ctx context.Context, user User, tx *sql.Tx) (int64, error) {
 
-	var userID int16
+	var userID int64
 
 	err := tx.QueryRowContext(
 		ctx,
@@ -68,8 +64,8 @@ func createUser(ctx context.Context, user User, tx *sql.Tx) (int16, error) {
 	return userID, nil
 }
 
-func createWallet(ctx context.Context, wallet Wallet, tx *sql.Tx) (int16, error) {
-	var walletID int16
+func createWallet(ctx context.Context, wallet Wallet, tx *sql.Tx) (int64, error) {
+	var walletID int64
 
 	err := tx.QueryRowContext(
 		ctx,
@@ -86,11 +82,11 @@ func createWallet(ctx context.Context, wallet Wallet, tx *sql.Tx) (int16, error)
 }
 
 type Wallet struct {
-	UserID  int16
+	UserID  int64
 	Balance int64
 }
 
 type User struct {
-	ID   int16
+	ID   int64
 	Name string
 }

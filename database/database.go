@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 )
 
 const databaseURL = "postgres://postgres:postgres@localhost:5432/transactions_lab?sslmode=disable"
@@ -13,13 +12,11 @@ func Connect(ctx context.Context) (*sql.DB, error) {
 	db, err := sql.Open("pgx", databaseURL)
 
 	if err != nil {
-		log.Fatal(err)
-		return nil, err
+		return nil, fmt.Errorf("open database: %w", err)
 	}
 
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatal(err)
-		return nil, err
+		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
 	fmt.Println("Connected to PostgreSQL.")

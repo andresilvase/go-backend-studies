@@ -23,7 +23,7 @@ func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int64, in
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("begin transaction: %w", err)
 	}
 
 	defer tx.Rollback()

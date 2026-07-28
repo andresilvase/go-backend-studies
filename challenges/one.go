@@ -23,7 +23,7 @@ func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int64, in
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, err
 	}
 
 	defer tx.Rollback()
@@ -31,17 +31,17 @@ func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int64, in
 	userID, err := createUser(ctx, user, tx)
 
 	if err != nil {
-		return -1, -1, fmt.Errorf("error creating user: %w", err)
+		return 0, 0, fmt.Errorf("error creating user: %w", err)
 	}
 
 	walletID, err := createWallet(ctx, Wallet{UserID: userID, Balance: 0}, tx)
 
 	if err != nil {
-		return -1, -1, err
+		return 0, 0, fmt.Errorf("error creating wallet: %w", err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return -1, -1, fmt.Errorf("error committing transaction: %w", err)
+		return 0, 0, fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	return userID, walletID, nil
@@ -58,7 +58,7 @@ func createUser(ctx context.Context, user User, tx *sql.Tx) (int64, error) {
 	).Scan(&userID)
 
 	if err != nil {
-		return -1, fmt.Errorf("failed to create user: %w", err)
+		return 0, fmt.Errorf("failed to create user: %w", err)
 	}
 
 	return userID, nil
@@ -75,7 +75,7 @@ func createWallet(ctx context.Context, wallet Wallet, tx *sql.Tx) (int64, error)
 	).Scan(&walletID)
 
 	if err != nil {
-		return -1, fmt.Errorf("failed to create wallet: %w", err)
+		return 0, fmt.Errorf("failed to create wallet: %w", err)
 	}
 
 	return walletID, nil

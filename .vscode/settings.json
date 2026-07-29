@@ -11,5 +11,8 @@
             "username": "postgres",
             "password": "postgres"
         }
-    ]
+    ],
+    // "editor.suggestOnTriggerCharacters": false,
+    // "editor.parameterHints.enabled": false,
+    "editor.inlineSuggest.enabled": false
 }

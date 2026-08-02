@@ -21,5 +21,6 @@ func main() {
 
 	defer db.Close()
 
-	challenges.One(ctx, db)
+	// challenges.One(ctx, db)
+	challenges.Two(ctx, db, 1, 2, 100)
 }

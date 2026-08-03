@@ -1,4 +1,4 @@
-package main
+package syntax
 
 import "fmt"
 
@@ -26,7 +26,7 @@ func Run() {
 	for i := 0; i < 10; i++ {
 		array = append(array, i)
 	}
-	fmt.Printf("Array filled: %v\n\n", array)
+	fmt.Printf("\nArray filled: %v\n\n", array)
 
 	fmt.Println("#4 Map creation")
 
@@ -51,7 +51,12 @@ func Run() {
 
 	fmt.Printf("\nArray filled: %v", array2)
 
-	fmt.Println("#6 Map creation")
+	fmt.Println("\nAdding Array into Array 2")
+
+	array2 = append(array2, array...)
+	fmt.Printf("\nArray filled: %v", array2)
+
+	fmt.Println("\n#6 Map creation")
 
 	mapa2 := map[int]interface{}{
 		0: "Né possy vi",

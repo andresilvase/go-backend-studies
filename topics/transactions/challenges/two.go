@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	customerrors "transactions-lab/topics/transactions/errors"
 )
 
 func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
@@ -21,7 +23,9 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
-		return fmt.Errorf("error when starting transaction for transference %w", err)
+		return &customerrors.DBErr{
+			Message: fmt.Sprintf("error starting transaction for transferMoney: %v", err),
+		}
 	}
 
 	defer tx.Rollback()
@@ -31,10 +35,16 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 		`UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND (balance - $1) >= 0`, amount, sourceWalletID,
 	)
 
-	affectRows, _ := result.RowsAffected()
+	if err != nil {
+		return &customerrors.DBErr{
+			Message: fmt.Sprintf("error withdrawing money from account %d: %v", sourceWalletID, err),
+		}
+	}
+
+	affectRows, err := result.RowsAffected()
 
 	if err != nil || affectRows == 0 {
-		return fmt.Errorf("there is no sufficient balance available or this account doesn't exist %d\n", sourceWalletID)
+		return fmt.Errorf("there is no sufficient balance available or account %d doesn't exist\n", sourceWalletID)
 	}
 
 	result, err = tx.ExecContext(
@@ -42,10 +52,16 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 		`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, amount, targetWalletID,
 	)
 
-	affectRows, _ = result.RowsAffected()
+	if err != nil {
+		return &customerrors.DBErr{
+			Message: fmt.Sprintf("error depositing account %d: %v", targetWalletID, err),
+		}
+	}
+
+	affectRows, err = result.RowsAffected()
 
 	if err != nil || affectRows == 0 {
-		return fmt.Errorf("error ocurred when depositing money into wallet %d\n", targetWalletID)
+		return fmt.Errorf("error ocurred when depositing money into wallet %d: %w\n", targetWalletID, err)
 	}
 
 	return tx.Commit()

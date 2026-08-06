@@ -11,6 +11,14 @@ import (
 func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
 	fmt.Printf("Transfering money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
 
+	if amount <= 0 {
+		return &customerrors.OperationErr{Message: "amount should be greater than zero"}
+	}
+
+	if sourceWalletID == targetWalletID {
+		return &customerrors.OperationErr{Message: "source and target wallets must differ"}
+	}
+
 	if err := transferMoney(ctx, db, sourceWalletID, targetWalletID, amount); err != nil {
 		return err
 	}
@@ -24,7 +32,8 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error starting transaction for transferMoney: %v", err),
+			Message: "error starting transaction for transferMoney",
+			Err:     err,
 		}
 	}
 
@@ -37,13 +46,21 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error withdrawing money from account %d: %v", sourceWalletID, err),
+			Message: fmt.Sprintf("error withdrawing money from account %d:\n", sourceWalletID),
+			Err:     err,
 		}
 	}
 
 	affectRows, err := result.RowsAffected()
 
-	if err != nil || affectRows == 0 {
+	if err != nil {
+		return &customerrors.DBErr{
+			Message: fmt.Sprintf("error reading affected rows when withdrawing account %d:\n", sourceWalletID),
+			Err:     err,
+		}
+	}
+
+	if affectRows == 0 {
 		return fmt.Errorf("there is no sufficient balance available or account %d doesn't exist\n", sourceWalletID)
 	}
 
@@ -54,14 +71,22 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error depositing account %d: %v", targetWalletID, err),
+			Message: fmt.Sprintf("error depositing account %d:\n", targetWalletID),
+			Err:     err,
 		}
 	}
 
 	affectRows, err = result.RowsAffected()
 
 	if err != nil || affectRows == 0 {
-		return fmt.Errorf("error ocurred when depositing money into wallet %d: %w\n", targetWalletID, err)
+		return &customerrors.DBErr{
+			Message: fmt.Sprintf("error ocurred when depositing money into wallet %d:\n", targetWalletID),
+			Err:     err,
+		}
+	}
+
+	if affectRows == 0 {
+		return fmt.Errorf("error ocurred when depositing money into wallet %d\n", targetWalletID)
 	}
 
 	return tx.Commit()

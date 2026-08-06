@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
+	"transactions-lab/challenges"
 	database "transactions-lab/database"
-	sy "transactions-lab/syntax"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -21,7 +21,12 @@ func main() {
 
 	defer db.Close()
 
-	// challenges.One(ctx, db)
-	// challenges.Two(ctx, db, 1, 2, 100)
-	sy.Run()
+	// if err := challenges.One(ctx, db); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	if err := challenges.Two(ctx, db, 1, 2, 100); err != nil {
+		log.Fatal(err)
+	}
+	// sy.Run()
 }

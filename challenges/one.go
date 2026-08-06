@@ -4,19 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 )
 
-func One(ctx context.Context, db *sql.DB) {
+func One(ctx context.Context, db *sql.DB) error {
 
 	userID, walletID, err := createUserWithWallet(ctx, User{Name: "John Doe"}, db)
 
 	if err != nil {
-		log.Fatalf("error creating user and wallet:\n%v", err)
+		return err
 	}
 
 	fmt.Printf("User created with ID: %+v\n", userID)
 	fmt.Printf("Wallet created with ID: %+v\n", walletID)
+	return nil
 }
 
 func createUserWithWallet(ctx context.Context, user User, db *sql.DB) (int64, int64, error) {

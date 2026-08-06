@@ -4,17 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 )
 
-func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) {
+func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
 	fmt.Printf("Transfering money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
 
 	if err := transferMoney(ctx, db, sourceWalletID, targetWalletID, amount); err != nil {
-		log.Fatal("error ocurred when transfering money")
+		return err
 	}
 
 	fmt.Println("Transference completed successfully!")
+	return nil
 }
 
 func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
@@ -28,13 +28,13 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	result, err := tx.ExecContext(
 		ctx,
-		`UPDATE wallets SET balance = balance - $1 WHERE id = $2`, amount, sourceWalletID,
+		`UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND (balance - $1) >= 0`, amount, sourceWalletID,
 	)
 
 	affectRows, _ := result.RowsAffected()
 
 	if err != nil || affectRows == 0 {
-		return fmt.Errorf("an error ocurred when withdrawing the money from account %d\n", sourceWalletID)
+		return fmt.Errorf("there is no sufficient balance available or this account doesn't exist %d\n", sourceWalletID)
 	}
 
 	result, err = tx.ExecContext(

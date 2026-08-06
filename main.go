@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"transactions-lab/challenges"
-	database "transactions-lab/database"
+	"transactions-lab/topics/transactions/challenges"
+	database "transactions-lab/topics/transactions/database"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )

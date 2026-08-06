@@ -78,7 +78,7 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	affectRows, err = result.RowsAffected()
 
-	if err != nil || affectRows == 0 {
+	if err != nil {
 		return &customerrors.DBErr{
 			Message: fmt.Sprintf("error ocurred when depositing money into wallet %d:\n", targetWalletID),
 			Err:     err,

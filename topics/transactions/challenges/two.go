@@ -8,8 +8,8 @@ import (
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
-	fmt.Printf("Transfering money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
+func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
+	fmt.Printf("Transferring money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
 
 	if amount <= 0 {
 		return &customerrors.OperationErr{Message: "amount should be greater than zero"}
@@ -23,11 +23,11 @@ func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount
 		return err
 	}
 
-	fmt.Println("Transference completed successfully!")
+	fmt.Println("Transfer completed successfully!")
 	return nil
 }
 
-func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int) error {
+func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -46,7 +46,7 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error withdrawing money from account %d:\n", sourceWalletID),
+			Message: fmt.Sprintf("error withdrawing money from account %d:", sourceWalletID),
 			Err:     err,
 		}
 	}
@@ -55,13 +55,13 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error reading affected rows when withdrawing account %d:\n", sourceWalletID),
+			Message: fmt.Sprintf("error reading affected rows when withdrawing account %d:", sourceWalletID),
 			Err:     err,
 		}
 	}
 
 	if affectRows == 0 {
-		return fmt.Errorf("there is no sufficient balance available or account %d doesn't exist\n", sourceWalletID)
+		return fmt.Errorf("there is no sufficient balance available or account %d doesn't exist", sourceWalletID)
 	}
 
 	result, err = tx.ExecContext(
@@ -71,7 +71,7 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error depositing account %d:\n", targetWalletID),
+			Message: fmt.Sprintf("error depositing account %d:", targetWalletID),
 			Err:     err,
 		}
 	}
@@ -80,14 +80,21 @@ func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWallet
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error ocurred when depositing money into wallet %d:\n", targetWalletID),
+			Message: fmt.Sprintf("error occurred when depositing money into wallet %d:", targetWalletID),
 			Err:     err,
 		}
 	}
 
 	if affectRows == 0 {
-		return fmt.Errorf("error ocurred when depositing money into wallet %d\n", targetWalletID)
+		return fmt.Errorf("target wallet %d does not exist", targetWalletID)
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return &customerrors.DBErr{
+			Message: "error committing money transfer",
+			Err:     err,
+		}
+	}
+
+	return nil
 }

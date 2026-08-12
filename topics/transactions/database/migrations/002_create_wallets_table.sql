@@ -8,4 +8,3 @@ CREATE TABLE wallets (
 
 DROP TABLE IF EXISTS wallets;
 
-

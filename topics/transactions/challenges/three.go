@@ -76,12 +76,6 @@ func transferMoneyFails(param ThreeParamOpts) error {
 
 	affectRows, err := result.RowsAffected()
 
-	if param.SimulatedFail != nil && *param.SimulatedFail {
-		return &customerrors.OperationErr{
-			Message: "unexpected error occurred",
-		}
-	}
-
 	if err != nil {
 		return &customerrors.DBErr{
 			Message: fmt.Sprintf("error reading affected rows when withdrawing account %d:", sourceWalletID),
@@ -91,6 +85,12 @@ func transferMoneyFails(param ThreeParamOpts) error {
 
 	if affectRows == 0 {
 		return fmt.Errorf("there is no sufficient balance available or account %d doesn't exist", sourceWalletID)
+	}
+
+	if param.SimulatedFail != nil && *param.SimulatedFail {
+		return &customerrors.OperationErr{
+			Message: "unexpected error occurred",
+		}
 	}
 
 	result, err = tx.ExecContext(

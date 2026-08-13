@@ -28,10 +28,13 @@ The repository currently explores:
         ├── Makefile                    # Migration shortcuts
         ├── challenges/
         │   ├── one.go                  # Create related records atomically
-        │   └── two.go                  # Transfer money atomically
-        └── database/
-            ├── database.go              # PostgreSQL connection
-            └── migrations/              # Versioned database schema
+        │   ├── two.go                  # Transfer money atomically
+        │   └── three.go                # Simulate transaction failure and rollback
+        ├── database/
+        │   ├── database.go              # PostgreSQL connection
+        │   └── migrations/              # Versioned database schema
+        └── errors/
+            └── custom_errors.go         # Custom error types
 ```
 
 ## Topics
@@ -97,6 +100,24 @@ It exercises:
 
 The key lesson is **conservation of money**: the debit and credit must both
 succeed, or neither change should remain.
+
+### Challenge 3 — simulate a failure mid-transfer and verify rollback
+
+[`three.go`](topics/transactions/challenges/three.go) demonstrates transaction
+safety by simulating a failure between the withdrawal and deposit operations.
+
+It exercises:
+
+- implementing a parameterized challenge function with options;
+- injecting a simulated failure point mid-transaction;
+- verifying that when an error occurs between operations, the entire transaction
+  rolls back and no partial changes persist;
+- using deferred rollback as a safety net; and
+- confirming that both wallets remain in their original state after a failed
+  transfer.
+
+The key lesson is **failure safety**: a partial or failed transfer leaves the
+database in a consistent state, with no orphaned debits or credits.
 
 ## Run from a fresh clone
 

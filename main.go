@@ -57,7 +57,7 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 	var chThreeDbErrors *customeerors.DBErr
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
-	// var simulatedFail = true
+	var simulatedFail = true
 	var amount int64 = 250
 
 	var chThreeParam challenges.ThreeParamOpts = challenges.ThreeParamOpts{
@@ -65,6 +65,7 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 		DB:             db,
 		SourceWalletID: &sourceWalletID,
 		TargetWalletID: &targetWalletID,
+		SimulatedFail:  &simulatedFail,
 		Amount:         &amount,
 	}
 	if err := challenges.Three(chThreeParam); err != nil {

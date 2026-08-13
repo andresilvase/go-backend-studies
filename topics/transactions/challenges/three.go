@@ -76,7 +76,7 @@ func transferMoneyFails(param ThreeParamOpts) error {
 
 	affectRows, err := result.RowsAffected()
 
-	if param.SimulatedFail == nil || !*param.SimulatedFail {
+	if param.SimulatedFail != nil && *param.SimulatedFail {
 		return &customerrors.OperationErr{
 			Message: "unexpected error occurred",
 		}

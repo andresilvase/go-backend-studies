@@ -3,13 +3,27 @@ package challenges
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Three(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
+type ThreeParamOpts struct {
+	Ctx            *context.Context
+	DB             *sql.DB
+	SourceWalletID *int64
+	TargetWalletID *int64
+	SimulatedFail  *bool
+	Amount         *int64
+}
+
+func Three(param ThreeParamOpts) error {
+	var (
+		sourceWalletID = *param.SourceWalletID
+		targetWalletID = *param.TargetWalletID
+		amount         = *param.Amount
+	)
+
 	fmt.Printf("Transferring money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
 
 	if amount <= 0 {
@@ -20,7 +34,7 @@ func Three(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amou
 		return &customerrors.OperationErr{Message: "source and target wallets must differ"}
 	}
 
-	if err := transferMoneyFails(ctx, db, sourceWalletID, targetWalletID, amount); err != nil {
+	if err := transferMoneyFails(param); err != nil {
 		return err
 	}
 
@@ -28,7 +42,15 @@ func Three(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amou
 	return nil
 }
 
-func transferMoneyFails(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
+func transferMoneyFails(param ThreeParamOpts) error {
+	var (
+		db             = param.DB
+		ctx            = *param.Ctx
+		sourceWalletID = *param.SourceWalletID
+		targetWalletID = *param.TargetWalletID
+		amount         = *param.Amount
+	)
+
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -54,7 +76,11 @@ func transferMoneyFails(ctx context.Context, db *sql.DB, sourceWalletID, targetW
 
 	affectRows, err := result.RowsAffected()
 
-	err = errors.New("unexpected error occured")
+	if param.SimulatedFail == nil || !*param.SimulatedFail {
+		return &customerrors.OperationErr{
+			Message: "unexpected error occurred",
+		}
+	}
 
 	if err != nil {
 		return &customerrors.DBErr{

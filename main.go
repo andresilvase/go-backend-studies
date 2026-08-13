@@ -29,7 +29,7 @@ func main() {
 	// }
 
 	var dbErrors *customeerors.DBErr
-	if err := challenges.Two(ctx, db, 1, 2, 100); err != nil {
+	if err := challenges.Three(ctx, db, 1, 2, 100); err != nil {
 		if errors.As(err, &dbErrors) {
 			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", dbErrors.Message, dbErrors.Err))
 		} else {

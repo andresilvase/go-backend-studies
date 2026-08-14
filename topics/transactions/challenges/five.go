@@ -10,7 +10,7 @@ import (
 )
 
 func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
-	errorChan := make(chan *mdl.ErrResult, 2)
+	errorChan := make(chan *customerrors.ErrResult, 2)
 	txChan := make(chan struct{})
 
 	wg.Add(2)
@@ -19,7 +19,7 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		var txName = "A"
 		defer wg.Done()
 		if err := transactionA(param, txName, txChan); err != nil {
-			errorChan <- &mdl.ErrResult{
+			errorChan <- &customerrors.ErrResult{
 				TxName: txName,
 				Err:    err,
 			}
@@ -33,7 +33,7 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 
 		defer wg.Done()
 		if err := transactionB(param, txName, txChan); err != nil {
-			errorChan <- &mdl.ErrResult{
+			errorChan <- &customerrors.ErrResult{
 				TxName: txName,
 				Err:    err,
 			}

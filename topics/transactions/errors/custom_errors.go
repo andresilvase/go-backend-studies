@@ -22,3 +22,12 @@ type OperationErr struct {
 func (d *OperationErr) Error() string {
 	return fmt.Sprintf("operational error: %s", d.Message)
 }
+
+type ErrResult struct {
+	TxName string
+	Err    error
+}
+
+func (e *ErrResult) Error() string {
+	return fmt.Sprintf("an error ocurred on transaction %s: %v", e.TxName, e.Err)
+}

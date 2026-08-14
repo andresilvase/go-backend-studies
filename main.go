@@ -121,6 +121,7 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
 
 	var chFiveDbErrors *customeerors.DBErr
+	var chFiveErrResult *customeerors.ErrResult
 
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
@@ -138,9 +139,13 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 
 	if err := challenges.Five(chFiveParam, &wg); err != nil {
 		if errors.As(err, &chFiveDbErrors) {
-			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chFiveDbErrors.Message, chFiveDbErrors.Err))
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %s - %w", chFiveDbErrors.Message, chFiveDbErrors.Err))
+		} else if errors.As(err, &chFiveErrResult) {
+			if chFiveErrResult != nil {
+				fmt.Printf("%s - %v", chFiveDbErrors.Message, chFiveDbErrors.Err)
+			}
 		} else {
-			fmt.Println(err)
+			fmt.Printf("error type: %T\n", err)
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	sy "transactions-lab/topics/syntax"
 	"transactions-lab/topics/transactions/challenges"
@@ -29,9 +30,10 @@ func main() {
 
 	// runSyntax()
 	// runChallengeOne(ctx, db)
-	runChallengeTwo(ctx, db)
+	// runChallengeTwo(ctx, db)
 	// runChallengeThree(ctx, db)
 	// runChallengeFour(ctx, db)
+	runChallengeFive(ctx, db)
 }
 
 func runSyntax() {
@@ -105,6 +107,7 @@ func runChallengeFour(ctx context.Context, db *sql.DB) {
 		SimulatedFail:  &simulatedFail,
 		Amount:         &amount,
 	}
+
 	if err := challenges.Four(chFourParam); err != nil {
 		if errors.As(err, &chFourDbErrors) {
 			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chFourDbErrors.Message, chFourDbErrors.Err))
@@ -112,4 +115,36 @@ func runChallengeFour(ctx context.Context, db *sql.DB) {
 			fmt.Println(err)
 		}
 	}
+}
+
+func runChallengeFive(ctx context.Context, db *sql.DB) {
+	var wg sync.WaitGroup
+
+	var chFiveDbErrors *customeerors.DBErr
+
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 2
+	var amount int64 = 250
+
+	var chFiveParam structs.TransferParams = structs.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		Amount:         &amount,
+	}
+
+	fmt.Println("Starting Read Committed process...")
+
+	if err := challenges.Five(chFiveParam, &wg); err != nil {
+		if errors.As(err, &chFiveDbErrors) {
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chFiveDbErrors.Message, chFiveDbErrors.Err))
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+	wg.Wait()
+
+	fmt.Println("Read Committed process finished!")
 }

@@ -45,7 +45,7 @@ func transferMoneyFails(param structs.TransferParams) error {
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: "error starting transaction for transferMoney",
+			Message: "error starting transaction for challenge Three",
 			Err:     err,
 		}
 	}

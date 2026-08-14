@@ -21,5 +21,5 @@ type ErrResult struct {
 }
 
 func (e *ErrResult) Error() string {
-	return fmt.Sprintf("error ocurred on transaction %s: %v", e.TxName, e.Err)
+	return fmt.Sprintf("an error ocurred on transaction %s: %v", e.TxName, e.Err)
 }

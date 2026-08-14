@@ -10,8 +10,8 @@ import (
 )
 
 func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
-	txChan := make(chan struct{}, 2)
-	errorChan := make(chan *mdl.ErrResult)
+	errorChan := make(chan *mdl.ErrResult, 2)
+	txChan := make(chan struct{})
 
 	wg.Add(2)
 

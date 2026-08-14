@@ -226,8 +226,8 @@ Expected output:
 
 ```text
 Connected to PostgreSQL.
-Transfering money from wallet 1 to wallet 2...
-Transference completed successfully!
+Transferring money from wallet 1 to wallet 2...
+Transfer completed successfully!
 ```
 
 You can inspect the result with:
@@ -254,7 +254,60 @@ if err := challenges.One(ctx, db); err != nil {
 To run **Challenge 2**, enable:
 
 ```go
-if err := challenges.Two(ctx, db, 1, 2, 100); err != nil {
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var amount int64 = 100
+
+var chTwoParam structs.TransferParams = structs.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	Amount:         &amount,
+}
+if err := challenges.Two(chTwoParam); err != nil {
+	log.Fatal(err)
+}
+```
+
+To run **Challenge 3**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var simulatedFail = true
+var amount int64 = 250
+
+var chThreeParam structs.TransferParams = structs.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	SimulatedFail:  &simulatedFail,
+	Amount:         &amount,
+}
+if err := challenges.Three(chThreeParam); err != nil {
+	log.Fatal(err)
+}
+```
+
+To run **Challenge 4**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var simulatedFail = true
+var amount int64 = 250
+
+var chFourParam structs.TransferParams = structs.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	SimulatedFail:  &simulatedFail,
+	Amount:         &amount,
+}
+if err := challenges.Four(chFourParam); err != nil {
 	log.Fatal(err)
 }
 ```

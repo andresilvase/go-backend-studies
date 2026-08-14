@@ -1,14 +1,19 @@
 package challenges
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 
+	structs "transactions-lab/topics/transactions/challenges/structs"
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
+func Two(param structs.TransferParams) error {
+	var (
+		sourceWalletID = *param.SourceWalletID
+		targetWalletID = *param.TargetWalletID
+		amount         = *param.Amount
+	)
+
 	fmt.Printf("Transferring money from wallet %d to wallet %d...\n", sourceWalletID, targetWalletID)
 
 	if amount <= 0 {
@@ -19,7 +24,7 @@ func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount
 		return &customerrors.OperationErr{Message: "source and target wallets must differ"}
 	}
 
-	if err := transferMoney(ctx, db, sourceWalletID, targetWalletID, amount); err != nil {
+	if err := transferMoney(param); err != nil {
 		return err
 	}
 
@@ -27,7 +32,15 @@ func Two(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount
 	return nil
 }
 
-func transferMoney(ctx context.Context, db *sql.DB, sourceWalletID, targetWalletID, amount int64) error {
+func transferMoney(param structs.TransferParams) error {
+	var (
+		db             = param.DB
+		ctx            = *param.Ctx
+		sourceWalletID = *param.SourceWalletID
+		targetWalletID = *param.TargetWalletID
+		amount         = *param.Amount
+	)
+
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {

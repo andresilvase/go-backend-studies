@@ -29,9 +29,9 @@ func main() {
 
 	// runSyntax()
 	// runChallengeOne(ctx, db)
-	// runChallengeTwo(ctx, db)
+	runChallengeTwo(ctx, db)
 	// runChallengeThree(ctx, db)
-	runChallengeFour(ctx, db)
+	// runChallengeFour(ctx, db)
 }
 
 func runSyntax() {
@@ -46,7 +46,18 @@ func runChallengeOne(ctx context.Context, db *sql.DB) {
 
 func runChallengeTwo(ctx context.Context, db *sql.DB) {
 	var chTwoDbErrors *customeerors.DBErr
-	if err := challenges.Two(ctx, db, 1, 2, 100); err != nil {
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 2
+	var amount int64 = 100
+
+	var chTwoParam structs.TransferParams = structs.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		Amount:         &amount,
+	}
+	if err := challenges.Two(chTwoParam); err != nil {
 		if errors.As(err, &chTwoDbErrors) {
 			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chTwoDbErrors.Message, chTwoDbErrors.Err))
 		} else {

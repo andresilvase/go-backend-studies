@@ -5,39 +5,43 @@ import (
 	"database/sql"
 	"fmt"
 	"sync"
-	structs "transactions-lab/topics/transactions/challenges/structs"
+	mdl "transactions-lab/topics/transactions/challenges/models"
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Five(param structs.TransferParams, wg *sync.WaitGroup) error {
-	txChan := make(chan struct{})
-	errorChan := make(chan error)
+func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
+	txChan := make(chan struct{}, 2)
+	errorChan := make(chan *mdl.ErrResult)
 
 	wg.Add(2)
 
 	go func() {
+		var txName = "A"
 		defer wg.Done()
-		if err := transactionA(param, "A", txChan); err != nil {
-			errorChan <- err
+		if err := transactionA(param, txName, txChan); err != nil {
+			errorChan <- &mdl.ErrResult{
+				TxName: txName,
+				Err:    err,
+			}
 		}
 	}()
 
 	go func() {
+		var txName = "B"
+
 		defer wg.Done()
-		if err := transactionB(param, "B", txChan); err != nil {
-			errorChan <- err
+		if err := transactionB(param, txName, txChan); err != nil {
+			errorChan <- &mdl.ErrResult{
+				TxName: txName,
+				Err:    err,
+			}
 		}
 	}()
 
-	err := <-errorChan
-
-	close(errorChan)
-	close(txChan)
-
-	return err
+	return <-errorChan
 }
 
-func transactionA(param structs.TransferParams, txName string, ch chan struct{}) error {
+func transactionA(param mdl.TransferParams, txName string, ch chan struct{}) error {
 
 	var (
 		db             = param.DB
@@ -78,7 +82,7 @@ func transactionA(param structs.TransferParams, txName string, ch chan struct{})
 	return nil
 }
 
-func transactionB(param structs.TransferParams, txName string, ch chan struct{}) error {
+func transactionB(param mdl.TransferParams, txName string, ch chan struct{}) error {
 	<-ch
 
 	var (

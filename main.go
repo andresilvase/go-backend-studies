@@ -10,7 +10,7 @@ import (
 
 	sy "transactions-lab/topics/syntax"
 	"transactions-lab/topics/transactions/challenges"
-	structs "transactions-lab/topics/transactions/challenges/structs"
+	mdl "transactions-lab/topics/transactions/challenges/models"
 	database "transactions-lab/topics/transactions/database"
 	customeerors "transactions-lab/topics/transactions/errors"
 
@@ -52,7 +52,7 @@ func runChallengeTwo(ctx context.Context, db *sql.DB) {
 	var targetWalletID int64 = 2
 	var amount int64 = 100
 
-	var chTwoParam structs.TransferParams = structs.TransferParams{
+	var chTwoParam mdl.TransferParams = mdl.TransferParams{
 		Ctx:            &ctx,
 		DB:             db,
 		SourceWalletID: &sourceWalletID,
@@ -75,7 +75,7 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 	var simulatedFail = true
 	var amount int64 = 250
 
-	var chThreeParam structs.TransferParams = structs.TransferParams{
+	var chThreeParam mdl.TransferParams = mdl.TransferParams{
 		Ctx:            &ctx,
 		DB:             db,
 		SourceWalletID: &sourceWalletID,
@@ -99,7 +99,7 @@ func runChallengeFour(ctx context.Context, db *sql.DB) {
 	var simulatedFail = true
 	var amount int64 = 250
 
-	var chFourParam structs.TransferParams = structs.TransferParams{
+	var chFourParam mdl.TransferParams = mdl.TransferParams{
 		Ctx:            &ctx,
 		DB:             db,
 		SourceWalletID: &sourceWalletID,
@@ -126,7 +126,7 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 	var targetWalletID int64 = 2
 	var amount int64 = 250
 
-	var chFiveParam structs.TransferParams = structs.TransferParams{
+	var chFiveParam mdl.TransferParams = mdl.TransferParams{
 		Ctx:            &ctx,
 		DB:             db,
 		SourceWalletID: &sourceWalletID,

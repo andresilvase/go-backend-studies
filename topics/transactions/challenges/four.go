@@ -2,11 +2,11 @@ package challenges
 
 import (
 	"fmt"
-	structs "transactions-lab/topics/transactions/challenges/structs"
+	mdl "transactions-lab/topics/transactions/challenges/models"
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Four(param structs.TransferParams) error {
+func Four(param mdl.TransferParams) error {
 	var (
 		sourceWalletID = *param.SourceWalletID
 		targetWalletID = *param.TargetWalletID
@@ -31,7 +31,7 @@ func Four(param structs.TransferParams) error {
 	return nil
 }
 
-func transferMoneyWithoutTransaction(param structs.TransferParams) error {
+func transferMoneyWithoutTransaction(param mdl.TransferParams) error {
 	var (
 		db             = param.DB
 		ctx            = *param.Ctx

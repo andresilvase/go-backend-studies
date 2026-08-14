@@ -29,7 +29,9 @@ The repository currently explores:
         ├── challenges/
         │   ├── one.go                  # Create related records atomically
         │   ├── two.go                  # Transfer money atomically
-        │   └── three.go                # Simulate transaction failure and rollback
+        │   ├── three.go                # Simulate transaction failure and rollback
+        │   ├── four.go                 # Transfer without transaction safeguards
+        │   └── five.go                 # Demonstrate concurrent transactions and isolation
         ├── database/
         │   ├── database.go              # PostgreSQL connection
         │   └── migrations/              # Versioned database schema
@@ -137,6 +139,25 @@ The key lesson is **the danger of unprotected updates**: a failure between the
 debit and credit leaves the database in an inconsistent state (money removed
 from one wallet but never added to another), illustrating why Challenge 3's
 transactional approach is essential for money transfer operations.
+
+### Challenge 5 — concurrent transactions and isolation levels
+
+[`five.go`](topics/transactions/challenges/five.go) demonstrates concurrent
+transactions running in parallel, using goroutines and channels to coordinate
+their execution and observe isolation behavior.
+
+It exercises:
+
+- spawning multiple goroutines with `sync.WaitGroup`;
+- coordinating goroutine execution with channels;
+- running concurrent database transactions;
+- reading data from within an active transaction;
+- observing how transaction isolation affects concurrent reads and writes; and
+- detecting dirty reads and isolation phenomena.
+
+The key lesson is **isolation matters in concurrency**: how the database isolates
+concurrent transactions determines what data each transaction observes, which is
+critical for building correct multi-user applications.
 
 ## Run from a fresh clone
 
@@ -310,6 +331,27 @@ var chFourParam structs.TransferParams = structs.TransferParams{
 if err := challenges.Four(chFourParam); err != nil {
 	log.Fatal(err)
 }
+```
+
+To run **Challenge 5**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var amount int64 = 100
+
+var chFiveParam structs.TransferParams = structs.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	Amount:         &amount,
+}
+var wg sync.WaitGroup
+if err := challenges.Five(chFiveParam, &wg); err != nil {
+	log.Fatal(err)
+}
+wg.Wait()
 ```
 
 To run the **syntax examples**, import the package and call `syntax.Run()`:

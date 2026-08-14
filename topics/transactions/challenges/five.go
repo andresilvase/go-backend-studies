@@ -24,7 +24,7 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 				Err:    err,
 			}
 		} else {
-			errorChan <- &mdl.ErrResult{}
+			errorChan <- nil
 		}
 	}()
 
@@ -38,7 +38,7 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 				Err:    err,
 			}
 		} else {
-			errorChan <- &mdl.ErrResult{}
+			errorChan <- nil
 		}
 	}()
 

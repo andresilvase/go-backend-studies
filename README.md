@@ -97,7 +97,7 @@ It exercises:
 - checking `RowsAffected` to detect missing wallets or a rejected debit;
 - rolling back when either half of the transfer fails; and
 - reinforcing business rules with the database `CHECK` constraint.
-
+ 
 The key lesson is **conservation of money**: the debit and credit must both
 succeed, or neither change should remain.
 
@@ -118,6 +118,25 @@ It exercises:
 
 The key lesson is **failure safety**: a partial or failed transfer leaves the
 database in a consistent state, with no orphaned debits or credits.
+
+### Challenge 4 — transfer without transaction safeguards
+
+[`four.go`](topics/transactions/challenges/four.go) performs a money transfer
+without using a transaction, exposing the risks of unprotected multi-step
+operations.
+
+It exercises:
+
+- input validation (amount > 0, distinct wallets);
+- executing debit and credit as separate, unprotected updates;
+- checking `RowsAffected` to validate wallet existence and balance;
+- simulating a failure between the debit and credit steps; and
+- demonstrating data inconsistency when transaction safeguards are absent.
+
+The key lesson is **the danger of unprotected updates**: a failure between the
+debit and credit leaves the database in an inconsistent state (money removed
+from one wallet but never added to another), illustrating why Challenge 3's
+transactional approach is essential for money transfer operations.
 
 ## Run from a fresh clone
 

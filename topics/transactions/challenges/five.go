@@ -68,6 +68,7 @@ func transactionA(param mdl.TransferParams, txName string, ch chan struct{}) err
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
+		ch <- struct{}{}
 		return &customerrors.DBErr{
 			Message: "error starting transaction for challenge Five - transactionA",
 			Err:     err,
@@ -77,6 +78,7 @@ func transactionA(param mdl.TransferParams, txName string, ch chan struct{}) err
 	defer tx.Rollback()
 
 	if err = readAndPrintAmount(ctx, tx, targetWalletID, txName); err != nil {
+		ch <- struct{}{}
 		return err
 	}
 
@@ -110,6 +112,7 @@ func transactionB(param mdl.TransferParams, txName string, ch chan struct{}) err
 	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
+		ch <- struct{}{}
 		return &customerrors.DBErr{
 			Message: "error starting transaction for challenge Five - transactionB",
 			Err:     err,
@@ -119,10 +122,12 @@ func transactionB(param mdl.TransferParams, txName string, ch chan struct{}) err
 	defer tx.Rollback()
 
 	if err = updateAmount(ctx, tx, targetWalletID); err != nil {
+		ch <- struct{}{}
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
+		ch <- struct{}{}
 		return &customerrors.DBErr{
 			Message: "error committing transaction for challenge Five - transactionB",
 			Err:     err,
@@ -159,7 +164,7 @@ func updateAmount(ctx context.Context, tx *sql.Tx, walletID int64) error {
 
 	result, err := tx.ExecContext(
 		ctx,
-		`UPDATE wallets SET balance = 2255 WHERE id = $1`, walletID,
+		`UPDATE wallets SET balance = 1000 WHERE id = $1`, walletID,
 	)
 
 	if err != nil {

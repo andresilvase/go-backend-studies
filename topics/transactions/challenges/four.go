@@ -2,12 +2,11 @@ package challenges
 
 import (
 	"fmt"
-
 	structs "transactions-lab/topics/transactions/challenges/structs"
 	customerrors "transactions-lab/topics/transactions/errors"
 )
 
-func Three(param structs.TransferParams) error {
+func Four(param structs.TransferParams) error {
 	var (
 		sourceWalletID = *param.SourceWalletID
 		targetWalletID = *param.TargetWalletID
@@ -24,7 +23,7 @@ func Three(param structs.TransferParams) error {
 		return &customerrors.OperationErr{Message: "source and target wallets must differ"}
 	}
 
-	if err := transferMoneyFails(param); err != nil {
+	if err := transferMoneyWithoutTransaction(param); err != nil {
 		return err
 	}
 
@@ -32,7 +31,7 @@ func Three(param structs.TransferParams) error {
 	return nil
 }
 
-func transferMoneyFails(param structs.TransferParams) error {
+func transferMoneyWithoutTransaction(param structs.TransferParams) error {
 	var (
 		db             = param.DB
 		ctx            = *param.Ctx
@@ -41,18 +40,7 @@ func transferMoneyFails(param structs.TransferParams) error {
 		amount         = *param.Amount
 	)
 
-	tx, err := db.BeginTx(ctx, nil)
-
-	if err != nil {
-		return &customerrors.DBErr{
-			Message: "error starting transaction for transferMoney",
-			Err:     err,
-		}
-	}
-
-	defer tx.Rollback()
-
-	result, err := tx.ExecContext(
+	result, err := db.ExecContext(
 		ctx,
 		`UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND (balance - $1) >= 0`, amount, sourceWalletID,
 	)
@@ -83,7 +71,7 @@ func transferMoneyFails(param structs.TransferParams) error {
 		}
 	}
 
-	result, err = tx.ExecContext(
+	result, err = db.ExecContext(
 		ctx,
 		`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, amount, targetWalletID,
 	)
@@ -106,13 +94,6 @@ func transferMoneyFails(param structs.TransferParams) error {
 
 	if affectRows == 0 {
 		return fmt.Errorf("target wallet %d does not exist", targetWalletID)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return &customerrors.DBErr{
-			Message: "error committing money transfer",
-			Err:     err,
-		}
 	}
 
 	return nil

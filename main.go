@@ -9,6 +9,7 @@ import (
 
 	sy "transactions-lab/topics/syntax"
 	"transactions-lab/topics/transactions/challenges"
+	structs "transactions-lab/topics/transactions/challenges/structs"
 	database "transactions-lab/topics/transactions/database"
 	customeerors "transactions-lab/topics/transactions/errors"
 
@@ -29,7 +30,8 @@ func main() {
 	// runSyntax()
 	// runChallengeOne(ctx, db)
 	// runChallengeTwo(ctx, db)
-	runChallengeThree(ctx, db)
+	// runChallengeThree(ctx, db)
+	runChallengeFour(ctx, db)
 }
 
 func runSyntax() {
@@ -60,7 +62,7 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 	var simulatedFail = true
 	var amount int64 = 250
 
-	var chThreeParam challenges.ThreeParamOpts = challenges.ThreeParamOpts{
+	var chThreeParam structs.TransferParams = structs.TransferParams{
 		Ctx:            &ctx,
 		DB:             db,
 		SourceWalletID: &sourceWalletID,
@@ -71,6 +73,30 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 	if err := challenges.Three(chThreeParam); err != nil {
 		if errors.As(err, &chThreeDbErrors) {
 			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chThreeDbErrors.Message, chThreeDbErrors.Err))
+		} else {
+			fmt.Println(err)
+		}
+	}
+}
+
+func runChallengeFour(ctx context.Context, db *sql.DB) {
+	var chFourDbErrors *customeerors.DBErr
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 2
+	var simulatedFail = true
+	var amount int64 = 250
+
+	var chFourParam structs.TransferParams = structs.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		SimulatedFail:  &simulatedFail,
+		Amount:         &amount,
+	}
+	if err := challenges.Four(chFourParam); err != nil {
+		if errors.As(err, &chFourDbErrors) {
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %v - %w", chFourDbErrors.Message, chFourDbErrors.Err))
 		} else {
 			fmt.Println(err)
 		}

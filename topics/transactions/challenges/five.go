@@ -23,6 +23,8 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 				TxName: txName,
 				Err:    err,
 			}
+		} else {
+			errorChan <- &mdl.ErrResult{}
 		}
 	}()
 
@@ -35,6 +37,8 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 				TxName: txName,
 				Err:    err,
 			}
+		} else {
+			errorChan <- &mdl.ErrResult{}
 		}
 	}()
 

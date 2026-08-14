@@ -142,7 +142,7 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 			log.Fatal(fmt.Errorf("fatal error accessing DB: %s - %w", chFiveDbErrors.Message, chFiveDbErrors.Err))
 		} else if errors.As(err, &chFiveErrResult) {
 			if chFiveErrResult != nil {
-				fmt.Printf("%s - %v", chFiveDbErrors.Message, chFiveDbErrors.Err)
+				fmt.Println(chFiveErrResult.Error())
 			}
 		} else {
 			fmt.Printf("error type: %T\n", err)

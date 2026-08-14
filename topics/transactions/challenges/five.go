@@ -42,7 +42,19 @@ func Five(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		}
 	}()
 
-	return <-errorChan
+	var firstErr error
+
+	for i := 0; i < 2; i++ {
+		err := <-errorChan
+
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	close(errorChan)
+
+	return firstErr
 }
 
 func transactionA(param mdl.TransferParams, txName string, ch chan struct{}) error {

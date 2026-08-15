@@ -173,7 +173,7 @@ func runChallengeSix(ctx context.Context, db *sql.DB) {
 		Amount:         &amount,
 	}
 
-	fmt.Println("Starting Read Committed process...")
+	fmt.Println("Starting Repeatable Read process...")
 
 	if err := challenges.Six(chSixParam, &wg); err != nil {
 		if errors.As(err, &chSixDbErrors) {

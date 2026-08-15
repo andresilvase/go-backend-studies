@@ -34,7 +34,8 @@ func main() {
 	// runChallengeThree(ctx, db)
 	// runChallengeFour(ctx, db)
 	// runChallengeFive(ctx, db)
-	runChallengeSix(ctx, db)
+	// runChallengeSix(ctx, db)
+	runChallengeSeven(ctx, db)
 }
 
 func runSyntax() {
@@ -190,4 +191,41 @@ func runChallengeSix(ctx context.Context, db *sql.DB) {
 	wg.Wait()
 
 	fmt.Println("Repeatable Read process finished!")
+}
+
+func runChallengeSeven(ctx context.Context, db *sql.DB) {
+	var wg sync.WaitGroup
+
+	var chSevenDbErrors *customeerors.DBErr
+	var chSevenErrResult *customeerors.ErrResult
+
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 2
+	var amount int64 = 250
+
+	var chSevenParam mdl.TransferParams = mdl.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		Amount:         &amount,
+	}
+
+	fmt.Println("Starting Phantom Reads process...")
+
+	if err := challenges.Seven(chSevenParam, &wg); err != nil {
+		if errors.As(err, &chSevenDbErrors) {
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %s - %w", chSevenDbErrors.Message, chSevenDbErrors.Err))
+		} else if errors.As(err, &chSevenErrResult) {
+			if chSevenErrResult != nil {
+				fmt.Println(chSevenErrResult.Error())
+			}
+		} else {
+			fmt.Printf("error type: %T\n", err)
+		}
+	}
+
+	wg.Wait()
+
+	fmt.Println("Phantom Reads process finished!")
 }

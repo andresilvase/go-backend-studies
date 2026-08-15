@@ -8,7 +8,7 @@ import (
 
 func One(ctx context.Context, db *sql.DB) error {
 
-	userID, walletID, err := createUserWithWallet(ctx, User{Name: "Joe Doe"}, db)
+	userID, walletID, err := createUserWithWallet(ctx, User{Name: "Shang Tsung"}, db)
 
 	if err != nil {
 		return err

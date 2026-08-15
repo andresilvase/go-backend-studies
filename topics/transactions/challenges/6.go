@@ -72,7 +72,7 @@ func transactionA_RR(param mdl.TransferParams, txName string, ch chan struct{}) 
 	if err != nil {
 		ch <- struct{}{}
 		return &customerrors.DBErr{
-			Message: "error starting transaction for challenge Five - transactionA_RR",
+			Message: "error starting transaction for challenge Six - transactionA_RR",
 			Err:     err,
 		}
 	}
@@ -94,7 +94,7 @@ func transactionA_RR(param mdl.TransferParams, txName string, ch chan struct{}) 
 
 	if err := tx.Commit(); err != nil {
 		return &customerrors.DBErr{
-			Message: "error committing transaction for challenge Five - transactionA_RR",
+			Message: "error committing transaction for challenge Six - transactionA_RR",
 			Err:     err,
 		}
 	}
@@ -116,7 +116,7 @@ func transactionB_RR(param mdl.TransferParams, txName string, ch chan struct{}) 
 	if err != nil {
 		ch <- struct{}{}
 		return &customerrors.DBErr{
-			Message: "error starting transaction for challenge Five - transactionB_RR",
+			Message: "error starting transaction for challenge Six - transactionB_RR",
 			Err:     err,
 		}
 	}
@@ -131,7 +131,7 @@ func transactionB_RR(param mdl.TransferParams, txName string, ch chan struct{}) 
 	if err := tx.Commit(); err != nil {
 		ch <- struct{}{}
 		return &customerrors.DBErr{
-			Message: "error committing transaction for challenge Five - transactionB_RR",
+			Message: "error committing transaction for challenge Six - transactionB_RR",
 			Err:     err,
 		}
 	}

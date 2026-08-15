@@ -60,9 +60,8 @@ func Seven(param mdl.TransferParams, wg *sync.WaitGroup) error {
 func transactionA_PhR(param mdl.TransferParams, txName string, ch chan struct{}) error {
 
 	var (
-		db             = param.DB
-		ctx            = *param.Ctx
-		targetWalletID = *param.TargetWalletID
+		db  = param.DB
+		ctx = *param.Ctx
 	)
 
 	tx, err := db.BeginTx(ctx, nil)
@@ -77,7 +76,7 @@ func transactionA_PhR(param mdl.TransferParams, txName string, ch chan struct{})
 
 	defer tx.Rollback()
 
-	if err = readAndPrintAmount_PhR(ctx, tx, targetWalletID, txName); err != nil {
+	if err = readAndPrintAmount_PhR(ctx, tx, txName); err != nil {
 		ch <- struct{}{}
 		return err
 	}
@@ -86,7 +85,7 @@ func transactionA_PhR(param mdl.TransferParams, txName string, ch chan struct{})
 
 	<-ch
 
-	if err = readAndPrintAmount_PhR(ctx, tx, targetWalletID, txName); err != nil {
+	if err = readAndPrintAmount_PhR(ctx, tx, txName); err != nil {
 		return err
 	}
 
@@ -141,7 +140,7 @@ func transactionB_PhR(param mdl.TransferParams, txName string, ch chan struct{})
 	return nil
 }
 
-func readAndPrintAmount_PhR(ctx context.Context, tx *sql.Tx, walletID int64, txName string) error {
+func readAndPrintAmount_PhR(ctx context.Context, tx *sql.Tx, txName string) error {
 	var count int64
 	err := tx.QueryRowContext(
 		ctx,
@@ -150,7 +149,7 @@ func readAndPrintAmount_PhR(ctx context.Context, tx *sql.Tx, walletID int64, txN
 
 	if err != nil {
 		return &customerrors.DBErr{
-			Message: fmt.Sprintf("error reading amount from account %d:", walletID),
+			Message: fmt.Sprintf("error counting predicate in readAndPrintAmount_PhR for %s: %s", txName, err.Error()),
 			Err:     err,
 		}
 	}

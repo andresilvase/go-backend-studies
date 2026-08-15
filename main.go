@@ -33,7 +33,8 @@ func main() {
 	// runChallengeTwo(ctx, db)
 	// runChallengeThree(ctx, db)
 	// runChallengeFour(ctx, db)
-	runChallengeFive(ctx, db)
+	// runChallengeFive(ctx, db)
+	runChallengeSix(ctx, db)
 }
 
 func runSyntax() {
@@ -143,6 +144,43 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 		} else if errors.As(err, &chFiveErrResult) {
 			if chFiveErrResult != nil {
 				fmt.Println(chFiveErrResult.Error())
+			}
+		} else {
+			fmt.Printf("error type: %T\n", err)
+		}
+	}
+
+	wg.Wait()
+
+	fmt.Println("Read Committed process finished!")
+}
+
+func runChallengeSix(ctx context.Context, db *sql.DB) {
+	var wg sync.WaitGroup
+
+	var chSixDbErrors *customeerors.DBErr
+	var chSixErrResult *customeerors.ErrResult
+
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 2
+	var amount int64 = 250
+
+	var chSixParam mdl.TransferParams = mdl.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		Amount:         &amount,
+	}
+
+	fmt.Println("Starting Read Committed process...")
+
+	if err := challenges.Six(chSixParam, &wg); err != nil {
+		if errors.As(err, &chSixDbErrors) {
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %s - %w", chSixDbErrors.Message, chSixDbErrors.Err))
+		} else if errors.As(err, &chSixErrResult) {
+			if chSixErrResult != nil {
+				fmt.Println(chSixErrResult.Error())
 			}
 		} else {
 			fmt.Printf("error type: %T\n", err)

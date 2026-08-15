@@ -164,7 +164,7 @@ func updateAmount(ctx context.Context, tx *sql.Tx, walletID int64) error {
 
 	result, err := tx.ExecContext(
 		ctx,
-		`UPDATE wallets SET balance = 1000 WHERE id = $1`, walletID,
+		`UPDATE wallets SET balance = balance - 1 WHERE id = $1`, walletID,
 	)
 
 	if err != nil {

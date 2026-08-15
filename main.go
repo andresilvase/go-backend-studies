@@ -189,5 +189,5 @@ func runChallengeSix(ctx context.Context, db *sql.DB) {
 
 	wg.Wait()
 
-	fmt.Println("Read Committed process finished!")
+	fmt.Println("Repeatable Read process finished!")
 }

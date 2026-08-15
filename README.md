@@ -385,10 +385,3 @@ docker compose --env-file topics/transactions/.env down
 # Stop PostgreSQL and delete the local database volume
 docker compose --env-file topics/transactions/.env down -v
 ```
-
-## Ideas for further study
-
-Natural next steps for this lab include adding table-driven tests, moving the
-database URL fully into environment-based configuration, validating positive
-transfer amounts, locking rows for concurrent transfers, and exposing the
-operations through an HTTP API.

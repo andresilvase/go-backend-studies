@@ -238,7 +238,7 @@ func runChallengeEight(ctx context.Context, db *sql.DB) {
 	var chEightErrResult *customeerors.ErrResult
 
 	var sourceWalletID int64 = 1
-	var targetWalletID int64 = 5
+	var targetWalletID int64 = 2
 	var amount int64 = 250
 
 	var chEightParam mdl.TransferParams = mdl.TransferParams{

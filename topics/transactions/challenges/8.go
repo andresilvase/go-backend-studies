@@ -3,10 +3,14 @@ package challenges
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
+	"time"
 	mdl "transactions-lab/topics/transactions/challenges/models"
 	customerrors "transactions-lab/topics/transactions/errors"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
@@ -14,15 +18,19 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 
 	errorChan := make(chan *customerrors.ErrResult, CHAN_BUF_SIZE)
 
-	aReady := make(chan struct{})
-	bReady := make(chan struct{})
+	// Sync channels must have at leat one size in buffer because without it,
+	// when one send there will be no one to reveive and will fall into a deadlock error.
+	aReady := make(chan struct{}, 1)
+	bReady := make(chan struct{}, 1)
 
 	wg.Add(2)
 
 	go func() {
 		var txName = "A"
 		defer wg.Done()
-		if err := transactionASerial(param, txName, aReady, bReady); err != nil {
+		if err := retryWrapper(func() error {
+			return transactionASerial(param, txName, aReady, bReady)
+		}); err != nil {
 			errorChan <- &customerrors.ErrResult{
 				TxName: txName,
 				Err:    err,
@@ -61,6 +69,41 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 	return firstErr
 }
 
+func retryWrapper(operation func() error) error {
+	MAX_ATTEMPT_RETRY := 5
+	initialDelay := 100 * time.Millisecond
+
+	for attempt := 0; attempt < MAX_ATTEMPT_RETRY; attempt++ {
+		err := operation()
+
+		if err == nil {
+			return nil
+		}
+
+		if !isRetryable(err) {
+			return err
+		}
+
+		delay := initialDelay * time.Duration(1<<attempt)
+		fmt.Printf("retrying after %dms\n", delay)
+		time.Sleep(delay)
+	}
+
+	return nil
+}
+
+func isRetryable(err error) bool {
+	var pgErr *pgconn.PgError
+
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "40001" || pgErr.Code == "40P01" {
+			return true
+		}
+	}
+
+	return false
+}
+
 func transactionASerial(param mdl.TransferParams, txName string, aReady, bReady chan struct{}) error {
 
 	var (
@@ -70,7 +113,9 @@ func transactionASerial(param mdl.TransferParams, txName string, aReady, bReady 
 		targetWallet = *param.TargetWalletID
 	)
 
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
 
 	if err != nil {
 		aReady <- struct{}{}
@@ -119,7 +164,9 @@ func transactionBSerial(param mdl.TransferParams, txName string, aReady, bReady 
 		sourceWallet = *param.TargetWalletID
 	)
 
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
 
 	if err != nil {
 		bReady <- struct{}{}

@@ -14,5 +14,6 @@
     ],
     // "editor.suggestOnTriggerCharacters": false,
     // "editor.parameterHints.enabled": false,
-    "editor.inlineSuggest.enabled": false
+    "editor.inlineSuggest.enabled": false,
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

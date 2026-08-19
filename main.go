@@ -35,7 +35,8 @@ func main() {
 	// runChallengeFour(ctx, db)
 	// runChallengeFive(ctx, db)
 	// runChallengeSix(ctx, db)
-	runChallengeSeven(ctx, db)
+	// runChallengeSeven(ctx, db)
+	runChallengeEight(ctx, db)
 }
 
 func runSyntax() {
@@ -228,4 +229,41 @@ func runChallengeSeven(ctx context.Context, db *sql.DB) {
 	wg.Wait()
 
 	fmt.Println("Phantom Reads process finished!")
+}
+
+func runChallengeEight(ctx context.Context, db *sql.DB) {
+	var wg sync.WaitGroup
+
+	var chEightDbErrors *customeerors.DBErr
+	var chEightErrResult *customeerors.ErrResult
+
+	var sourceWalletID int64 = 1
+	var targetWalletID int64 = 5
+	var amount int64 = 250
+
+	var chEightParam mdl.TransferParams = mdl.TransferParams{
+		Ctx:            &ctx,
+		DB:             db,
+		SourceWalletID: &sourceWalletID,
+		TargetWalletID: &targetWalletID,
+		Amount:         &amount,
+	}
+
+	fmt.Println("Starting Serializable process...")
+
+	if err := challenges.Eight(chEightParam, &wg); err != nil {
+		if errors.As(err, &chEightDbErrors) {
+			log.Fatal(fmt.Errorf("fatal error accessing DB: %s - %w", chEightDbErrors.Message, chEightDbErrors.Err))
+		} else if errors.As(err, &chEightErrResult) {
+			if chEightErrResult != nil {
+				fmt.Println(chEightErrResult.Error())
+			}
+		} else {
+			fmt.Printf("error type: %T\n", err)
+		}
+	}
+
+	wg.Wait()
+
+	fmt.Println("Serializable process finished!")
 }

@@ -14,6 +14,7 @@ import (
 )
 
 func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
+	ctx := *param.Ctx
 	CHAN_BUF_SIZE := 2
 
 	errorChan := make(chan *customerrors.ErrResult, CHAN_BUF_SIZE)
@@ -23,14 +24,39 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 	aReady := make(chan struct{}, 1)
 	bReady := make(chan struct{}, 1)
 
+	// Context used to cancel the experiment in case one of the goroutines fails before the sync point.
+	barrierCtx, cancelCtx := context.WithCancel(ctx)
+
 	wg.Add(2)
+
+	afterRead := func(signalingCh, waitingCh chan struct{}) error {
+		signalingCh <- struct{}{}
+
+		select {
+		case <-waitingCh:
+			return nil
+		case <-barrierCtx.Done():
+			return barrierCtx.Err()
+		}
+	}
 
 	go func() {
 		var txName = "A"
 		defer wg.Done()
-		if err := retryWrapper(txName, func(attempt int) error {
-			return transactionASerial(param, txName, attempt, aReady, bReady)
-		}); err != nil {
+
+		err := retryWrapper(txName, func(attempt int) error {
+			if attempt == 0 {
+				if err := transactionASerial(barrierCtx, param, txName, func() error {
+					return afterRead(aReady, bReady)
+				}); err != nil {
+					cancelCtx()
+					return err
+				}
+			}
+			return transactionASerial(ctx, param, txName, nil)
+		})
+
+		if err != nil {
 			errorChan <- &customerrors.ErrResult{
 				TxName: txName,
 				Err:    err,
@@ -44,9 +70,20 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		var txName = "B"
 
 		defer wg.Done()
-		if err := retryWrapper(txName, func(attempt int) error {
-			return transactionBSerial(param, txName, attempt, aReady, bReady)
-		}); err != nil {
+
+		err := retryWrapper(txName, func(attempt int) error {
+			if attempt == 0 {
+				if err := transactionBSerial(barrierCtx, param, txName, func() error {
+					return afterRead(bReady, aReady)
+				}); err != nil {
+					cancelCtx()
+					return err
+				}
+			}
+			return transactionBSerial(ctx, param, txName, nil)
+		})
+
+		if err != nil {
 			errorChan <- &customerrors.ErrResult{
 				TxName: txName,
 				Err:    err,
@@ -107,11 +144,10 @@ func isRetryable(err error) bool {
 	return false
 }
 
-func transactionASerial(param mdl.TransferParams, txName string, attempt int, aReady, bReady chan struct{}) error {
+func transactionASerial(ctx context.Context, param mdl.TransferParams, txName string, afterReadA func() error) error {
 
 	var (
 		db           = param.DB
-		ctx          = *param.Ctx
 		sourceWallet = *param.SourceWalletID
 		targetWallet = *param.TargetWalletID
 	)
@@ -121,7 +157,6 @@ func transactionASerial(param mdl.TransferParams, txName string, attempt int, aR
 	})
 
 	if err != nil {
-		aReady <- struct{}{}
 		return &customerrors.DBErr{
 			Message: "error starting transaction for challenge Eight - transactionASerial",
 			Err:     err,
@@ -133,14 +168,13 @@ func transactionASerial(param mdl.TransferParams, txName string, attempt int, aR
 	targetWalletBalance, err := readOtherWalletBalance(ctx, tx, txName, targetWallet)
 
 	if err != nil {
-		aReady <- struct{}{}
 		return err
 	}
 
-	aReady <- struct{}{}
-
-	if attempt == 0 {
-		<-bReady
+	if afterReadA != nil {
+		if err := afterReadA(); err != nil {
+			return err
+		}
 	}
 
 	if targetWalletBalance >= 600 {
@@ -161,11 +195,10 @@ func transactionASerial(param mdl.TransferParams, txName string, attempt int, aR
 	return nil
 }
 
-func transactionBSerial(param mdl.TransferParams, txName string, attempt int, aReady, bReady chan struct{}) error {
+func transactionBSerial(ctx context.Context, param mdl.TransferParams, txName string, afterReadB func() error) error {
 
 	var (
 		db           = param.DB
-		ctx          = *param.Ctx
 		targetWallet = *param.SourceWalletID
 		sourceWallet = *param.TargetWalletID
 	)
@@ -175,7 +208,6 @@ func transactionBSerial(param mdl.TransferParams, txName string, attempt int, aR
 	})
 
 	if err != nil {
-		bReady <- struct{}{}
 		return &customerrors.DBErr{
 			Message: "error starting transaction for challenge Eight - transactionBSerial",
 			Err:     err,
@@ -187,14 +219,11 @@ func transactionBSerial(param mdl.TransferParams, txName string, attempt int, aR
 	targetWalletBalance, err := readOtherWalletBalance(ctx, tx, "B", targetWallet)
 
 	if err != nil {
-		bReady <- struct{}{}
 		return err
 	}
 
-	bReady <- struct{}{}
-
-	if attempt == 0 {
-		<-aReady
+	if afterReadB != nil {
+		afterReadB()
 	}
 
 	if targetWalletBalance >= 600 {

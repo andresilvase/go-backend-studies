@@ -121,17 +121,22 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 func retryWrapper(txName string, operation func(attempt int) error) error {
 	MAX_ATTEMPT_RETRY := 5
 	initialDelay := 100 * time.Millisecond
+	var lastErr error
 
 	for attempt := 0; attempt < MAX_ATTEMPT_RETRY; attempt++ {
 		fmt.Printf("Tx-%s running attempt %d...\n", txName, attempt)
-		err := operation(attempt)
+		lastErr = operation(attempt)
 
-		if err == nil {
+		if lastErr == nil {
 			return nil
 		}
 
-		if !isRetryable(err) {
-			return err
+		if !isRetryable(lastErr) {
+			return lastErr
+		}
+
+		if attempt == MAX_ATTEMPT_RETRY-1 {
+			return lastErr
 		}
 
 		delay := initialDelay * time.Duration(1<<attempt)
@@ -139,7 +144,7 @@ func retryWrapper(txName string, operation func(attempt int) error) error {
 		time.Sleep(delay)
 	}
 
-	return nil
+	return lastErr
 }
 
 func isRetryable(err error) bool {

@@ -45,17 +45,21 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		defer wg.Done()
 
 		err := retryWrapper(txName, func(attempt int) error {
+			reachedBarrier := false
 			if attempt == 0 {
-				if err := transactionASerial(barrierCtx, param, txName, func() error {
+				err := transactionASerial(barrierCtx, param, txName, func() error {
+					reachedBarrier = true
 					return afterRead(aReady, bReady)
-				}); err != nil {
+				})
+
+				if err != nil && reachedBarrier {
 					cancelCtx()
-					return err
 				}
+
+				return err
 			} else {
 				return transactionASerial(ctx, param, txName, nil)
 			}
-			return nil
 		})
 
 		if err != nil {
@@ -74,17 +78,19 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		defer wg.Done()
 
 		err := retryWrapper(txName, func(attempt int) error {
+			reachedBarrier := false
 			if attempt == 0 {
-				if err := transactionBSerial(barrierCtx, param, txName, func() error {
+				err := transactionBSerial(barrierCtx, param, txName, func() error {
+					reachedBarrier = true
 					return afterRead(bReady, aReady)
-				}); err != nil {
+				})
+				if err != nil && reachedBarrier {
 					cancelCtx()
-					return err
 				}
+				return err
 			} else {
 				return transactionBSerial(ctx, param, txName, nil)
 			}
-			return nil
 		})
 
 		if err != nil {

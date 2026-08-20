@@ -52,7 +52,7 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 					return afterRead(aReady, bReady)
 				})
 
-				if err != nil && reachedBarrier {
+				if err != nil && !reachedBarrier {
 					cancelCtx()
 				}
 
@@ -84,7 +84,7 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 					reachedBarrier = true
 					return afterRead(bReady, aReady)
 				})
-				if err != nil && reachedBarrier {
+				if err != nil && !reachedBarrier {
 					cancelCtx()
 				}
 				return err

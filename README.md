@@ -159,6 +159,26 @@ The key lesson is **isolation matters in concurrency**: how the database isolate
 concurrent transactions determines what data each transaction observes, which is
 critical for building correct multi-user applications.
 
+### Challenge 8 — serializable transactions with retry
+
+[`8.go`](topics/transactions/challenges/8.go) runs two concurrent transactions
+at `SERIALIZABLE` isolation, synchronizing both after they read the other
+wallet's balance before attempting their updates.
+
+It exercises:
+
+- coordinating concurrent transactions with goroutines, wait groups, and buffered channels;
+- using a barrier to reproduce a serialization conflict deterministically;
+- cancelling the shared context when a transaction fails before reaching the barrier;
+- identifying PostgreSQL serialization failures (`40001`) and deadlocks (`40P01`) as retryable errors;
+- retrying transient failures with exponential backoff, up to five attempts; and
+- collecting errors from both transactions while allowing each goroutine to finish cleanly.
+
+The key lesson is **serializable isolation needs retry handling**: the database
+can reject one of two conflicting transactions to preserve consistency, so the
+application must retry transient failures instead of treating them as permanent
+operation errors.
+
 ## Run from a fresh clone
 
 ### Prerequisites

@@ -52,8 +52,10 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 					cancelCtx()
 					return err
 				}
+			} else {
+				return transactionASerial(ctx, param, txName, nil)
 			}
-			return transactionASerial(ctx, param, txName, nil)
+			return nil
 		})
 
 		if err != nil {
@@ -79,8 +81,10 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 					cancelCtx()
 					return err
 				}
+			} else {
+				return transactionBSerial(ctx, param, txName, nil)
 			}
-			return transactionBSerial(ctx, param, txName, nil)
+			return nil
 		})
 
 		if err != nil {
@@ -223,7 +227,9 @@ func transactionBSerial(ctx context.Context, param mdl.TransferParams, txName st
 	}
 
 	if afterReadB != nil {
-		afterReadB()
+		if err := afterReadB(); err != nil {
+			return err
+		}
 	}
 
 	if targetWalletBalance >= 600 {

@@ -27,11 +27,15 @@ The repository currently explores:
     └── transactions/
         ├── Makefile                    # Migration shortcuts
         ├── challenges/
-        │   ├── one.go                  # Create related records atomically
-        │   ├── two.go                  # Transfer money atomically
-        │   ├── three.go                # Simulate transaction failure and rollback
-        │   ├── four.go                 # Transfer without transaction safeguards
-        │   └── five.go                 # Demonstrate concurrent transactions and isolation
+        │   ├── 1.go                    # Create related records atomically
+        │   ├── 2.go                    # Transfer money atomically
+        │   ├── 3.go                    # Simulate transaction failure and rollback
+        │   ├── 4.go                    # Transfer without transaction safeguards
+        │   ├── 5.go                    # Observe a non-repeatable read
+        │   ├── 6.go                    # Prevent a non-repeatable read
+        │   ├── 7.go                    # Observe a phantom read
+        │   ├── 8.go                    # Retry serializable transactions
+        │   └── models/                 # Shared challenge parameters
         ├── database/
         │   ├── database.go              # PostgreSQL connection
         │   └── migrations/              # Versioned database schema
@@ -71,7 +75,7 @@ The schema is introduced incrementally:
 
 ### Challenge 1 — create a user and wallet together
 
-[`one.go`](topics/transactions/challenges/one.go) inserts a user, captures its
+[`1.go`](topics/transactions/challenges/1.go) inserts a user, captures its
 generated ID, and creates the user's wallet inside the same transaction.
 
 It exercises:
@@ -88,7 +92,7 @@ the wallet that belongs to them.
 
 ### Challenge 2 — transfer money between wallets
 
-[`two.go`](topics/transactions/challenges/two.go) debits one wallet and credits
+[`2.go`](topics/transactions/challenges/2.go) debits one wallet and credits
 another inside a single transaction.
 
 It exercises:
@@ -105,7 +109,7 @@ succeed, or neither change should remain.
 
 ### Challenge 3 — simulate a failure mid-transfer and verify rollback
 
-[`three.go`](topics/transactions/challenges/three.go) demonstrates transaction
+[`3.go`](topics/transactions/challenges/3.go) demonstrates transaction
 safety by simulating a failure between the withdrawal and deposit operations.
 
 It exercises:
@@ -123,7 +127,7 @@ database in a consistent state, with no orphaned debits or credits.
 
 ### Challenge 4 — transfer without transaction safeguards
 
-[`four.go`](topics/transactions/challenges/four.go) performs a money transfer
+[`4.go`](topics/transactions/challenges/4.go) performs a money transfer
 without using a transaction, exposing the risks of unprotected multi-step
 operations.
 
@@ -142,9 +146,10 @@ transactional approach is essential for money transfer operations.
 
 ### Challenge 5 — concurrent transactions and isolation levels
 
-[`five.go`](topics/transactions/challenges/five.go) demonstrates concurrent
+[`5.go`](topics/transactions/challenges/5.go) demonstrates concurrent
 transactions running in parallel, using goroutines and channels to coordinate
-their execution and observe isolation behavior.
+their execution and reproduce a non-repeatable read under PostgreSQL's default
+`READ COMMITTED` isolation level.
 
 It exercises:
 
@@ -153,11 +158,50 @@ It exercises:
 - running concurrent database transactions;
 - reading data from within an active transaction;
 - observing how transaction isolation affects concurrent reads and writes; and
-- detecting dirty reads and isolation phenomena.
+- detecting a non-repeatable read when the same transaction sees a newly
+  committed value on its second query.
 
 The key lesson is **isolation matters in concurrency**: how the database isolates
 concurrent transactions determines what data each transaction observes, which is
 critical for building correct multi-user applications.
+
+### Challenge 6 — prevent non-repeatable reads
+
+[`6.go`](topics/transactions/challenges/6.go) repeats Challenge 5 with
+transaction A running at `REPEATABLE READ` isolation. Transaction B updates and
+commits the wallet balance between transaction A's two reads, but transaction A
+continues to see its original snapshot.
+
+It exercises:
+
+- selecting `sql.LevelRepeatableRead` with `sql.TxOptions`;
+- coordinating two concurrent transactions with goroutines and channels;
+- reading the same wallet before and after another transaction commits;
+- comparing snapshot behavior with the default `READ COMMITTED` behavior; and
+- preventing non-repeatable reads within a transaction.
+
+The key lesson is **a stable snapshot produces repeatable reads**: changes
+committed by another transaction are not visible until the repeatable-read
+transaction finishes.
+
+### Challenge 7 — observe a phantom read
+
+[`7.go`](topics/transactions/challenges/7.go) runs the same predicate query
+twice in transaction A while transaction B changes a wallet so that it newly
+matches the predicate `balance > 1000` between those reads.
+
+It exercises:
+
+- coordinating predicate reads and a concurrent update;
+- counting rows that match a condition inside an active transaction;
+- committing a change from a second transaction between two reads;
+- observing the result set change under the default `READ COMMITTED` isolation
+  level; and
+- demonstrating the phantom-read isolation phenomenon.
+
+The key lesson is **predicate results can change during a transaction**: at
+`READ COMMITTED`, each statement receives a new snapshot and may see rows that
+did not match an earlier query.
 
 ### Challenge 8 — serializable transactions with retry
 
@@ -247,14 +291,15 @@ make -C topics/transactions status
 
 ### 7. Prepare data for the default exercise
 
-`main.go` currently runs Challenge 2 with wallet IDs `1` and `2`, transferring
-`100` units. A new database therefore needs two users, two wallets, and a
-balance in the source wallet:
+`main.go` currently runs Challenge 8 with wallet IDs `1` and `2`. A new database
+therefore needs two users and two wallets. Both balances start at `600` so the
+two serializable transactions attempt conflicting updates and exercise the
+retry logic:
 
 ```bash
 docker compose --env-file topics/transactions/.env exec postgres \
   psql -U postgres -d transactions_lab -c \
-  "INSERT INTO users (name) VALUES ('Source User'), ('Target User'); INSERT INTO wallets (user_id, balance) VALUES (1, 500), (2, 0);"
+  "INSERT INTO users (name) VALUES ('Source User'), ('Target User'); INSERT INTO wallets (user_id, balance) VALUES (1, 600), (2, 600);"
 ```
 
 ### 8. Run the current challenge
@@ -263,12 +308,15 @@ docker compose --env-file topics/transactions/.env exec postgres \
 go run .
 ```
 
-Expected output:
+The exact order varies because the transactions run concurrently, but the
+output includes messages similar to:
 
 ```text
 Connected to PostgreSQL.
-Transferring money from wallet 1 to wallet 2...
-Transfer completed successfully!
+Starting Serializable process...
+Tx-A running attempt 0...
+Tx-B running attempt 0...
+Serializable process finished!
 ```
 
 You can inspect the result with:
@@ -299,7 +347,7 @@ var sourceWalletID int64 = 1
 var targetWalletID int64 = 2
 var amount int64 = 100
 
-var chTwoParam structs.TransferParams = structs.TransferParams{
+var chTwoParam mdl.TransferParams = mdl.TransferParams{
 	Ctx:            &ctx,
 	DB:             db,
 	SourceWalletID: &sourceWalletID,
@@ -319,7 +367,7 @@ var targetWalletID int64 = 2
 var simulatedFail = true
 var amount int64 = 250
 
-var chThreeParam structs.TransferParams = structs.TransferParams{
+var chThreeParam mdl.TransferParams = mdl.TransferParams{
 	Ctx:            &ctx,
 	DB:             db,
 	SourceWalletID: &sourceWalletID,
@@ -340,7 +388,7 @@ var targetWalletID int64 = 2
 var simulatedFail = true
 var amount int64 = 250
 
-var chFourParam structs.TransferParams = structs.TransferParams{
+var chFourParam mdl.TransferParams = mdl.TransferParams{
 	Ctx:            &ctx,
 	DB:             db,
 	SourceWalletID: &sourceWalletID,
@@ -360,7 +408,7 @@ var sourceWalletID int64 = 1
 var targetWalletID int64 = 2
 var amount int64 = 100
 
-var chFiveParam structs.TransferParams = structs.TransferParams{
+var chFiveParam mdl.TransferParams = mdl.TransferParams{
 	Ctx:            &ctx,
 	DB:             db,
 	SourceWalletID: &sourceWalletID,
@@ -369,6 +417,69 @@ var chFiveParam structs.TransferParams = structs.TransferParams{
 }
 var wg sync.WaitGroup
 if err := challenges.Five(chFiveParam, &wg); err != nil {
+	log.Fatal(err)
+}
+wg.Wait()
+```
+
+To run **Challenge 6**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var amount int64 = 250
+
+var chSixParam mdl.TransferParams = mdl.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	Amount:         &amount,
+}
+var wg sync.WaitGroup
+if err := challenges.Six(chSixParam, &wg); err != nil {
+	log.Fatal(err)
+}
+wg.Wait()
+```
+
+To run **Challenge 7**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var amount int64 = 250
+
+var chSevenParam mdl.TransferParams = mdl.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	Amount:         &amount,
+}
+var wg sync.WaitGroup
+if err := challenges.Seven(chSevenParam, &wg); err != nil {
+	log.Fatal(err)
+}
+wg.Wait()
+```
+
+To run **Challenge 8**, enable:
+
+```go
+var sourceWalletID int64 = 1
+var targetWalletID int64 = 2
+var amount int64 = 250
+
+var chEightParam mdl.TransferParams = mdl.TransferParams{
+	Ctx:            &ctx,
+	DB:             db,
+	SourceWalletID: &sourceWalletID,
+	TargetWalletID: &targetWalletID,
+	Amount:         &amount,
+}
+var wg sync.WaitGroup
+if err := challenges.Eight(chEightParam, &wg); err != nil {
 	log.Fatal(err)
 }
 wg.Wait()

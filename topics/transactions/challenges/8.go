@@ -19,8 +19,11 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 
 	errorChan := make(chan *customerrors.ErrResult, CHAN_BUF_SIZE)
 
-	// Sync channels must have at leat one size in buffer because without it,
-	// when one send there will be no one to reveive and will fall into a deadlock error.
+	// Sync channels in this case must have at least one size in buffer so it can send
+	// and continues its works without the need for another goroutine to be waiting for it.
+	// If we used unbuffered channels, the moment a signal is sent, the sender would get
+	// blocked forever waiting for the receiver to read, what wouldn't happen, because the receiver
+	// would be waiting too. It's concurrency, remember?
 	aReady := make(chan struct{}, 1)
 	bReady := make(chan struct{}, 1)
 
@@ -45,14 +48,12 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		defer wg.Done()
 
 		err := retryWrapper(txName, func(attempt int) error {
-			reachedBarrier := false
 			if attempt == 0 {
-				err := transactionASerial(barrierCtx, param, txName, func() error {
-					reachedBarrier = true
+				err := transactionASerial(ctx, param, txName, func() error {
 					return afterRead(aReady, bReady)
 				})
 
-				if err != nil && !reachedBarrier {
+				if err != nil {
 					cancelCtx()
 				}
 
@@ -78,13 +79,11 @@ func Eight(param mdl.TransferParams, wg *sync.WaitGroup) error {
 		defer wg.Done()
 
 		err := retryWrapper(txName, func(attempt int) error {
-			reachedBarrier := false
 			if attempt == 0 {
-				err := transactionBSerial(barrierCtx, param, txName, func() error {
-					reachedBarrier = true
+				err := transactionBSerial(ctx, param, txName, func() error {
 					return afterRead(bReady, aReady)
 				})
-				if err != nil && !reachedBarrier {
+				if err != nil {
 					cancelCtx()
 				}
 				return err
@@ -160,7 +159,6 @@ func isRetryable(err error) bool {
 }
 
 func transactionASerial(ctx context.Context, param mdl.TransferParams, txName string, afterReadA func() error) error {
-
 	var (
 		db           = param.DB
 		sourceWallet = *param.SourceWalletID

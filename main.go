@@ -13,8 +13,6 @@ import (
 	mdl "transactions-lab/topics/transactions/challenges/models"
 	database "transactions-lab/topics/transactions/database"
 	customeerors "transactions-lab/topics/transactions/errors"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {

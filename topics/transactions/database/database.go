@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const databaseURL = "postgres://postgres:postgres@localhost:5432/transactions_lab?sslmode=disable"

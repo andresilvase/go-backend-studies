@@ -1,0 +1,9 @@
+CREATE TABLE products(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    price BIGINT NOT NULL DEFAULT 0
+);
+
+---- create above / drop below ----
+
+DROP TABLE IF EXISTS products CASCADE;

@@ -8,5 +8,4 @@ CREATE TABLE orders_items(
 
 ---- create above / drop below ----
 
-DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS orders_items;

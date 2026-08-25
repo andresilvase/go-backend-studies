@@ -6,4 +6,4 @@ CREATE TABLE products(
 
 ---- create above / drop below ----
 
-DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS products;

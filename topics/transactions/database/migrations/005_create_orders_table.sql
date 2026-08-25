@@ -4,4 +4,4 @@ CREATE TABLE orders(
 )
 ---- create above / drop below ----
 
--- Table dropped in the order_items rollback statements
+DROP TABLE IF EXISTS orders;

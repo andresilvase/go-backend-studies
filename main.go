@@ -34,7 +34,8 @@ func main() {
 	// runChallengeFive(ctx, db)
 	// runChallengeSix(ctx, db)
 	// runChallengeSeven(ctx, db)
-	runChallengeEight(ctx, db)
+	// runChallengeEight(ctx, db)
+	runChallengeNine(ctx, db)
 }
 
 func runSyntax() {
@@ -264,4 +265,11 @@ func runChallengeEight(ctx context.Context, db *sql.DB) {
 	wg.Wait()
 
 	fmt.Println("Serializable process finished!")
+}
+
+func runChallengeNine(ctx context.Context, db *sql.DB) {
+	var wg sync.WaitGroup
+	challenges.Nine(ctx, db, &wg)
+
+	wg.Wait()
 }

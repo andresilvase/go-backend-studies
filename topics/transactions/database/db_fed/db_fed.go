@@ -6,19 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	db_conn "transactions-lab/topics/transactions/database"
 	"transactions-lab/topics/transactions/database/pgstore"
 	"transactions-lab/topics/utils"
-)
-
-type TableName string
-
-const (
-	Users    TableName = "users"
-	Products TableName = "products"
 )
 
 func main() {
@@ -56,13 +48,13 @@ func insertUsers(ctx context.Context, queries *pgstore.Queries) {
 
 	fmt.Println("Inserindo usuários...")
 
-	csvFolderPath, err := getCSVFolderPath()
+	csvFolderPath, err := utils.GetCSVFolderPath()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, Users))
+	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, utils.Users))
 
 	if err != nil {
 		log.Fatal(err)
@@ -90,13 +82,13 @@ func insertUsers(ctx context.Context, queries *pgstore.Queries) {
 func insertProducts(ctx context.Context, queries *pgstore.Queries) {
 	fmt.Println("Inserindo produtos...")
 
-	csvFolderPath, err := getCSVFolderPath()
+	csvFolderPath, err := utils.GetCSVFolderPath()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, Products))
+	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, utils.Products))
 
 	if err != nil {
 		log.Fatal(err)
@@ -120,7 +112,7 @@ func insertProducts(ctx context.Context, queries *pgstore.Queries) {
 			continue
 		}
 
-		err = queries.CreateProduct(ctx, pgstore.CreateProductParams{
+		newProductId, err := queries.CreateProduct(ctx, pgstore.CreateProductParams{
 			Name:  record[1],
 			Price: productPrice,
 		})
@@ -129,22 +121,22 @@ func insertProducts(ctx context.Context, queries *pgstore.Queries) {
 			log.Printf("failed to create product: %v", err)
 			continue
 		}
+
+		err = setProductInventory(ctx, queries, newProductId)
+
+		if err != nil {
+			log.Printf("failed to update product inventory: %v", err)
+			continue
+		}
 	}
 }
 
-func getCSVFolderPath() (string, error) {
-	root, err := utils.ProjectRoot()
-
-	if err != nil {
-		return "", err
-	}
-
-	csvFolderPath := filepath.Join(
-		root,
-		"topics",
-		"transactions",
-		"data",
+func setProductInventory(ctx context.Context, queries *pgstore.Queries, productId int64) error {
+	return queries.SetProductInventory(
+		ctx, pgstore.SetProductInventoryParams{
+			ProductID: productId,
+			Stock:     9999,
+			// Stock:     rand.Int63n(25) + 1,
+		},
 	)
-
-	return csvFolderPath, nil
 }

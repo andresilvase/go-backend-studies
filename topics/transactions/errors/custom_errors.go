@@ -17,6 +17,7 @@ func (d *DBErr) Unwrap() error {
 
 type OperationErr struct {
 	Message string
+	Err     error
 }
 
 func (d *OperationErr) Error() string {

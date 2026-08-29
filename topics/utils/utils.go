@@ -6,6 +6,13 @@ import (
 	"path/filepath"
 )
 
+type TableName string
+
+const (
+	Users    TableName = "users"
+	Products TableName = "products"
+)
+
 func ProjectRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -25,4 +32,21 @@ func ProjectRoot() (string, error) {
 
 		dir = parent
 	}
+}
+
+func GetCSVFolderPath() (string, error) {
+	root, err := ProjectRoot()
+
+	if err != nil {
+		return "", err
+	}
+
+	csvFolderPath := filepath.Join(
+		root,
+		"topics",
+		"transactions",
+		"data",
+	)
+
+	return csvFolderPath, nil
 }

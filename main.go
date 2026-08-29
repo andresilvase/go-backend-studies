@@ -12,7 +12,7 @@ import (
 	"transactions-lab/topics/transactions/challenges"
 	mdl "transactions-lab/topics/transactions/challenges/models"
 	database "transactions-lab/topics/transactions/database"
-	customeerors "transactions-lab/topics/transactions/errors"
+	customerrors "transactions-lab/topics/transactions/errors"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func runChallengeOne(ctx context.Context, db *sql.DB) {
 }
 
 func runChallengeTwo(ctx context.Context, db *sql.DB) {
-	var chTwoDbErrors *customeerors.DBErr
+	var chTwoDbErrors *customerrors.DBErr
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
 	var amount int64 = 100
@@ -71,7 +71,7 @@ func runChallengeTwo(ctx context.Context, db *sql.DB) {
 }
 
 func runChallengeThree(ctx context.Context, db *sql.DB) {
-	var chThreeDbErrors *customeerors.DBErr
+	var chThreeDbErrors *customerrors.DBErr
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
 	var simulatedFail = true
@@ -95,7 +95,7 @@ func runChallengeThree(ctx context.Context, db *sql.DB) {
 }
 
 func runChallengeFour(ctx context.Context, db *sql.DB) {
-	var chFourDbErrors *customeerors.DBErr
+	var chFourDbErrors *customerrors.DBErr
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
 	var simulatedFail = true
@@ -122,8 +122,8 @@ func runChallengeFour(ctx context.Context, db *sql.DB) {
 func runChallengeFive(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
 
-	var chFiveDbErrors *customeerors.DBErr
-	var chFiveErrResult *customeerors.ErrResult
+	var chFiveDbErrors *customerrors.DBErr
+	var chFiveErrResult *customerrors.ErrResult
 
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
@@ -159,8 +159,8 @@ func runChallengeFive(ctx context.Context, db *sql.DB) {
 func runChallengeSix(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
 
-	var chSixDbErrors *customeerors.DBErr
-	var chSixErrResult *customeerors.ErrResult
+	var chSixDbErrors *customerrors.DBErr
+	var chSixErrResult *customerrors.ErrResult
 
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
@@ -196,8 +196,8 @@ func runChallengeSix(ctx context.Context, db *sql.DB) {
 func runChallengeSeven(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
 
-	var chSevenDbErrors *customeerors.DBErr
-	var chSevenErrResult *customeerors.ErrResult
+	var chSevenDbErrors *customerrors.DBErr
+	var chSevenErrResult *customerrors.ErrResult
 
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
@@ -233,8 +233,8 @@ func runChallengeSeven(ctx context.Context, db *sql.DB) {
 func runChallengeEight(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
 
-	var chEightDbErrors *customeerors.DBErr
-	var chEightErrResult *customeerors.ErrResult
+	var chEightDbErrors *customerrors.DBErr
+	var chEightErrResult *customerrors.ErrResult
 
 	var sourceWalletID int64 = 1
 	var targetWalletID int64 = 2
@@ -269,7 +269,29 @@ func runChallengeEight(ctx context.Context, db *sql.DB) {
 
 func runChallengeNine(ctx context.Context, db *sql.DB) {
 	var wg sync.WaitGroup
-	challenges.Nine(ctx, db, &wg)
+	var chNineDbErrors *customerrors.DBErr
+	var chNineErrResult *customerrors.ErrResult
+
+	err := challenges.Nine(challenges.ChallengeNineParams{
+		Ctx: ctx,
+		DB:  db,
+		WG:  &wg,
+	})
+
+	if err != nil {
+		if errors.As(err, &chNineDbErrors) {
+			log.Fatal(err)
+		} else if errors.As(err, &chNineErrResult) {
+			if chNineErrResult != nil {
+				fmt.Println(chNineErrResult.Error())
+			}
+
+		} else {
+			fmt.Printf("error type: %T\n", err)
+		}
+	}
+
+	fmt.Println("Multiple table challenge finished.")
 
 	wg.Wait()
 }

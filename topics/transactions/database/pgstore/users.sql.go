@@ -10,7 +10,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users("name") VALUES ($1)
+INSERT INTO users(name) VALUES ($1)
 `
 
 func (q *Queries) CreateUser(ctx context.Context, name string) error {

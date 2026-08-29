@@ -11,8 +11,8 @@ rollback-all:
 sql:
 	sqlc generate -f ./topics/transactions/database/sqlc.yml
 	
-backfill:
-	go run ./topics/transactions/database/migrations
+db_fed:
+	go run ./topics/transactions/database/db_fed
 
 status:
 	tern status -m topics/transactions/database/migrations -c topics/transactions/database/migrations/tern.conf

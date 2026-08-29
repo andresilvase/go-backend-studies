@@ -7,7 +7,7 @@ package pgstore
 type Inventory struct {
 	ID        int64 `json:"id"`
 	ProductID int64 `json:"product_id"`
-	Stock     int32 `json:"stock"`
+	Stock     int64 `json:"stock"`
 }
 
 type Order struct {
@@ -15,11 +15,11 @@ type Order struct {
 	UserID int64 `json:"user_id"`
 }
 
-type OrdersItem struct {
+type OrderItem struct {
 	ID        int64 `json:"id"`
 	OrderID   int64 `json:"order_id"`
 	ProductID int64 `json:"product_id"`
-	Quantity  int32 `json:"quantity"`
+	Quantity  int64 `json:"quantity"`
 }
 
 type Product struct {

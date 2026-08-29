@@ -9,8 +9,8 @@ import (
 	"context"
 )
 
-const createProduct = `-- name: CreateProduct :exec
-INSERT INTO products(name, price) VALUES ($1, $2)
+const createProduct = `-- name: CreateProduct :one
+INSERT INTO products(name, price) VALUES ($1, $2) RETURNING id
 `
 
 type CreateProductParams struct {
@@ -18,7 +18,9 @@ type CreateProductParams struct {
 	Price int64  `json:"price"`
 }
 
-func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) error {
-	_, err := q.db.ExecContext(ctx, createProduct, arg.Name, arg.Price)
-	return err
+func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createProduct, arg.Name, arg.Price)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

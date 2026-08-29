@@ -1,3 +1,5 @@
+.PHONY: migrations rollback-all sql db_fed reset status
+
 -include topics/transactions/database/migrations/.env
 export
 
@@ -13,6 +15,9 @@ sql:
 	
 db_fed:
 	go run ./topics/transactions/database/db_fed
+
+reset:
+	$(MAKE) rollback-all && $(MAKE) migrations && $(MAKE) db_fed
 
 status:
 	tern status -m topics/transactions/database/migrations -c topics/transactions/database/migrations/tern.conf

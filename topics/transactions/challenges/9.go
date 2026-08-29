@@ -41,7 +41,7 @@ func spawnGORoutines(orderIntents []OrderIntent, params ChallengeNineParams, err
 }
 
 func getOrderIntents() ([]OrderIntent, error) {
-	NUMBER_OF_ORDER_INTENTS := 2
+	NUMBER_OF_ORDER_INTENTS := 1
 	orderIntents := make([]OrderIntent, NUMBER_OF_ORDER_INTENTS)
 	var firstErr error
 

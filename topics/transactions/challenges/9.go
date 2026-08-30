@@ -77,7 +77,7 @@ func retryAttempts(operation func(attempt int) error, txNumber int) error {
 		}
 
 		delay := initialBackoffDelay * time.Duration(1<<attempt)
-		jitter := time.Duration(rand.Int63n(int64(delay)))
+		jitter := time.Duration(rand.Int63n(int64(500 * time.Millisecond)))
 		time.Sleep(delay + jitter)
 	}
 

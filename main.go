@@ -27,7 +27,7 @@ func main() {
 
 	defer db.Close()
 
-	CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS := 500
+	CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS := 100
 
 	// Essential config for challenge nine to thrive.
 	db.SetMaxOpenConns(10)

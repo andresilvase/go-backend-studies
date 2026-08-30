@@ -52,7 +52,7 @@ func spawnGORoutines(orderIntents []OrderIntent, params ChallengeNineParams, err
 }
 
 func retryAttempts(operation func(attempt int) error, txNumber int) error {
-	MAX_ATTEMPTS := 20
+	MAX_ATTEMPTS := 5
 	var lastErr error
 	initialBackoffDelay := 100 * time.Millisecond
 
@@ -180,10 +180,19 @@ func makePurchase(params ChallengeNineParams, orderIntent OrderIntent) error {
 		}
 	}
 
+	defer tx.Rollback()
+
 	txQuery := pgstore.New(db).WithTx(tx)
 
 	// Create an order
 	orderId, err := txQuery.CreateOrder(ctx, orderIntent.Buyer.ID)
+
+	if err != nil {
+		return &customerrs.DBErr{
+			Message: "error while creating order",
+			Err:     err,
+		}
+	}
 
 	for product, qtdRequested := range orderIntent.Products {
 		// Read product stock

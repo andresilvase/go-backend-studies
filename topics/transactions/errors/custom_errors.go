@@ -8,7 +8,7 @@ type DBErr struct {
 }
 
 func (d *DBErr) Error() string {
-	return fmt.Sprintf("an error occured accessing database: %s - %v", d.Message, d.Err)
+	return fmt.Sprintf("an error occurred while accessing the database: %s - %v", d.Message, d.Err)
 }
 
 func (d *DBErr) Unwrap() error {

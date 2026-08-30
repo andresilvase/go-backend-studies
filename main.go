@@ -27,7 +27,9 @@ func main() {
 
 	defer db.Close()
 
-	// Essential config for challenge nine to thrive if it has nearly to 100 routines running.
+	CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS := 500
+
+	// Essential config for challenge nine to thrive.
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
 	db.SetConnMaxLifetime(30 * time.Minute)
@@ -41,7 +43,7 @@ func main() {
 	// runChallengeSix(ctx, db)
 	// runChallengeSeven(ctx, db)
 	// runChallengeEight(ctx, db)
-	runChallengeNine(ctx, db)
+	runChallengeNine(ctx, db, CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS)
 }
 
 func runSyntax() {
@@ -273,15 +275,16 @@ func runChallengeEight(ctx context.Context, db *sql.DB) {
 	fmt.Println("Serializable process finished!")
 }
 
-func runChallengeNine(ctx context.Context, db *sql.DB) {
+func runChallengeNine(ctx context.Context, db *sql.DB, numberOfIntents int) {
 	var wg sync.WaitGroup
 	var chNineDbErrors *customerrors.DBErr
 	var chNineErrResult *customerrors.ErrResult
 
 	err := challenges.Nine(challenges.ChallengeNineParams{
-		Ctx: ctx,
-		DB:  db,
-		WG:  &wg,
+		Ctx:             ctx,
+		DB:              db,
+		WG:              &wg,
+		NumberOfIntents: numberOfIntents,
 	})
 
 	if err != nil {

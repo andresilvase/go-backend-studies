@@ -29,7 +29,7 @@ func GenerateOrderIntent() (OrderIntent, error) {
 	}
 
 	for i := 0; i < productsCount; i++ {
-		productMap[products[i]] = (rand.Int63n(25) + 1)
+		productMap[products[rand.Intn(len(products))]] = (rand.Int63n(25) + 1)
 	}
 
 	return OrderIntent{

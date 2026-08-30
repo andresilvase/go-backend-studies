@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 	"transactions-lab/topics/transactions/database/pgstore"
@@ -20,9 +21,10 @@ type OrderIntent struct {
 }
 
 type ChallengeNineParams struct {
-	Ctx context.Context
-	DB  *sql.DB
-	WG  *sync.WaitGroup
+	Ctx             context.Context
+	DB              *sql.DB
+	WG              *sync.WaitGroup
+	NumberOfIntents int
 }
 
 func spawnGORoutines(orderIntents []OrderIntent, params ChallengeNineParams, errorChan chan *customerrs.ErrResult) {
@@ -65,7 +67,7 @@ func retryAttempts(operation func(attempt int) error, txNumber int) error {
 		}
 
 		if !shouldRetry(lastErr) {
-			fmt.Printf("Should not retry %v - %d\n", lastErr, attempt)
+			fmt.Printf("Should not retry after attempt %d due to %v\n", attempt, lastErr)
 			return lastErr
 		}
 
@@ -75,7 +77,8 @@ func retryAttempts(operation func(attempt int) error, txNumber int) error {
 		}
 
 		delay := initialBackoffDelay * time.Duration(1<<attempt)
-		time.Sleep(delay)
+		jitter := time.Duration(rand.Int63n(int64(delay)))
+		time.Sleep(delay + jitter)
 	}
 
 	return nil
@@ -93,12 +96,11 @@ func shouldRetry(err error) bool {
 	return false
 }
 
-func getOrderIntents() ([]OrderIntent, error) {
-	NUMBER_OF_ORDER_INTENTS := 500
-	orderIntents := make([]OrderIntent, NUMBER_OF_ORDER_INTENTS)
+func getOrderIntents(numberOfIntents int) ([]OrderIntent, error) {
+	orderIntents := make([]OrderIntent, numberOfIntents)
 	var firstErr error
 
-	for i := 0; i < NUMBER_OF_ORDER_INTENTS; i++ {
+	for i := 0; i < numberOfIntents; i++ {
 		orderIntent, err := GenerateOrderIntent()
 		if err != nil {
 			if firstErr == nil {
@@ -136,7 +138,7 @@ func Nine(params ChallengeNineParams) error {
 
 	// ================ START OF PRODUCTION CODE =================
 
-	orderIntents, err := getOrderIntents()
+	orderIntents, err := getOrderIntents(params.NumberOfIntents)
 
 	if err != nil {
 		return &customerrs.OperationErr{

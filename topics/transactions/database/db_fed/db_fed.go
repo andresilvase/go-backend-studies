@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -136,8 +135,7 @@ func setProductInventory(ctx context.Context, queries *pgstore.Queries, productI
 	return queries.SetProductInventory(
 		ctx, pgstore.SetProductInventoryParams{
 			ProductID: productId,
-			// Stock:     9999,
-			Stock: rand.Int63n(25) + 1,
+			Stock:     9999,
 		},
 	)
 }

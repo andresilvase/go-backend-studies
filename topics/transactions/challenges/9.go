@@ -94,7 +94,7 @@ func shouldRetry(err error) bool {
 }
 
 func getOrderIntents() ([]OrderIntent, error) {
-	NUMBER_OF_ORDER_INTENTS := 100
+	NUMBER_OF_ORDER_INTENTS := 500
 	orderIntents := make([]OrderIntent, NUMBER_OF_ORDER_INTENTS)
 	var firstErr error
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	sy "transactions-lab/topics/syntax"
 	"transactions-lab/topics/transactions/challenges"
@@ -25,6 +26,11 @@ func main() {
 	}
 
 	defer db.Close()
+
+	// Essential config for challenge nine to thrive if it has nearly to 100 routines running.
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	// runSyntax()
 	// runChallengeOne(ctx, db)

@@ -38,7 +38,7 @@ func Ten(params ChallengeTenParams) error {
 
 	if err != nil {
 		return &customerrors.OperationErr{
-			Message: "error gettting random user",
+			Message: "error getting random user",
 			Err:     err,
 		}
 	}
@@ -56,7 +56,7 @@ func Ten(params ChallengeTenParams) error {
 
 	if err != nil {
 		return &customerrors.OperationErr{
-			Message: fmt.Sprintf("error wallet for user user %s with ID %d", userData.Name, createdUserId),
+			Message: fmt.Sprintf("error creating wallet for user %s with ID %d", userData.Name, createdUserId),
 			Err:     err,
 		}
 	}
@@ -72,7 +72,7 @@ func Ten(params ChallengeTenParams) error {
 
 	if err = tx.Commit(); err != nil {
 		return &customerrors.DBErr{
-			Message: "error initiating transaction for challenge ten.",
+			Message: "error committing transaction for challenge ten.",
 			Err:     err,
 		}
 	}

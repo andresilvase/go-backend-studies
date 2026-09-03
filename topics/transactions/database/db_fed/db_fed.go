@@ -71,7 +71,7 @@ func insertUsers(ctx context.Context, queries *pgstore.Queries) {
 	}
 
 	for _, record := range csvRows[1:] {
-		err := queries.CreateUser(ctx, record[1])
+		_, err := queries.CreateUser(ctx, record[1])
 
 		if err != nil {
 			log.Printf("failed to create user: %v", err)

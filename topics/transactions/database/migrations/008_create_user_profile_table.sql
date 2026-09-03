@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS user_profile(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,    
+    category VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    wallet_id BIGINT NOT NULL UNIQUE REFERENCES wallets(id) ON DELETE CASCADE
+);
+
+---- create above / drop below ----
+
+DROP TABLE IF EXISTS user_profile;

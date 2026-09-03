@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -49,4 +50,30 @@ func GetCSVFolderPath() (string, error) {
 	)
 
 	return csvFolderPath, nil
+}
+
+func CsvContent(csvFileName string) ([][]string, error) {
+	csvFolderPath, err := GetCSVFolderPath()
+
+	if err != nil {
+		return [][]string{}, err
+	}
+
+	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, csvFileName))
+
+	if err != nil {
+		return [][]string{}, err
+	}
+
+	defer csvFile.Close()
+
+	fileReader := csv.NewReader(csvFile)
+
+	csvRows, err := fileReader.ReadAll()
+
+	if err != nil {
+		return [][]string{}, err
+	}
+
+	return csvRows, nil
 }

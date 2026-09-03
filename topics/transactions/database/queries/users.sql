@@ -1,2 +1,2 @@
--- name: CreateUser :exec
-INSERT INTO users(name) VALUES ($1);
+-- name: CreateUser :one
+INSERT INTO users(name) VALUES ($1) RETURNING id;

@@ -1,12 +1,10 @@
 package challenges
 
 import (
-	"encoding/csv"
-	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"strconv"
+	shared "transactions-lab/topics/transactions/challenges/shared"
 	"transactions-lab/topics/transactions/database/pgstore"
 	"transactions-lab/topics/utils"
 )
@@ -16,7 +14,7 @@ func GenerateOrderIntent() (OrderIntent, error) {
 	randomUser := rand.Intn(5)
 	productMap := make(map[pgstore.Product]int64, productsCount)
 
-	users, err := getUsersFromData()
+	users, err := shared.GetUsersFromCSVData()
 
 	if err != nil {
 		return OrderIntent{}, nil
@@ -39,7 +37,7 @@ func GenerateOrderIntent() (OrderIntent, error) {
 }
 
 func getProductsFromData() ([]pgstore.Product, error) {
-	content, err := csvContent(string(utils.Products))
+	content, err := utils.CsvContent(string(utils.Products))
 
 	if err != nil {
 		return []pgstore.Product{}, nil
@@ -70,56 +68,4 @@ func getProductsFromData() ([]pgstore.Product, error) {
 	}
 
 	return products, nil
-}
-
-func getUsersFromData() ([]pgstore.User, error) {
-	content, err := csvContent(string(utils.Users))
-
-	if err != nil {
-		return []pgstore.User{}, nil
-	}
-
-	var users []pgstore.User
-
-	for _, record := range content[1:] {
-		userID, err := strconv.ParseInt(record[0], 10, 64)
-
-		if err != nil {
-			log.Printf("invalid user id %q: %v", record[2], err)
-			continue
-		}
-
-		users = append(users, pgstore.User{
-			ID:   userID,
-			Name: record[1],
-		})
-	}
-
-	return users, nil
-}
-
-func csvContent(csvFileName string) ([][]string, error) {
-	csvFolderPath, err := utils.GetCSVFolderPath()
-
-	if err != nil {
-		return [][]string{}, err
-	}
-
-	csvFile, err := os.Open(fmt.Sprintf("%s/%s.csv", csvFolderPath, csvFileName))
-
-	if err != nil {
-		return [][]string{}, err
-	}
-
-	defer csvFile.Close()
-
-	fileReader := csv.NewReader(csvFile)
-
-	csvRows, err := fileReader.ReadAll()
-
-	if err != nil {
-		return [][]string{}, err
-	}
-
-	return csvRows, nil
 }

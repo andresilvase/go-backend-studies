@@ -9,11 +9,13 @@ import (
 	"context"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users(name) VALUES ($1)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users(name) VALUES ($1) RETURNING id
 `
 
-func (q *Queries) CreateUser(ctx context.Context, name string) error {
-	_, err := q.db.ExecContext(ctx, createUser, name)
-	return err
+func (q *Queries) CreateUser(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createUser, name)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

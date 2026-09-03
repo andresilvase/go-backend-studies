@@ -33,6 +33,13 @@ type User struct {
 	Name string `json:"name"`
 }
 
+type UserProfile struct {
+	ID       int64  `json:"id"`
+	Category string `json:"category"`
+	UserID   int64  `json:"user_id"`
+	WalletID int64  `json:"wallet_id"`
+}
+
 type Wallet struct {
 	ID      int64 `json:"id"`
 	UserID  int64 `json:"user_id"`

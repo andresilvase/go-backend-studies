@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	sy "transactions-lab/topics/syntax"
 	"transactions-lab/topics/transactions/challenges"
@@ -27,12 +26,12 @@ func main() {
 
 	defer db.Close()
 
-	CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS := 50
+	// CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS := 50
 
 	// Essential config for challenge nine to thrive.
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-	db.SetConnMaxLifetime(30 * time.Minute)
+	// db.SetMaxOpenConns(10)
+	// db.SetMaxIdleConns(10)
+	// db.SetConnMaxLifetime(30 * time.Minute)
 
 	// runSyntax()
 	// runChallengeOne(ctx, db)
@@ -43,7 +42,8 @@ func main() {
 	// runChallengeSix(ctx, db)
 	// runChallengeSeven(ctx, db)
 	// runChallengeEight(ctx, db)
-	runChallengeNine(ctx, db, CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS)
+	// runChallengeNine(ctx, db, CHALLLENGE_NINE_NUMBER_OF_ORDER_INTENTS)
+	runChallengeTen(ctx, db)
 }
 
 func runSyntax() {
@@ -278,7 +278,6 @@ func runChallengeEight(ctx context.Context, db *sql.DB) {
 func runChallengeNine(ctx context.Context, db *sql.DB, numberOfIntents int) {
 	var wg sync.WaitGroup
 	var chNineDbErrors *customerrors.DBErr
-	var chNineErrResult *customerrors.ErrResult
 
 	err := challenges.Nine(challenges.ChallengeNineParams{
 		Ctx:             ctx,
@@ -290,17 +289,33 @@ func runChallengeNine(ctx context.Context, db *sql.DB, numberOfIntents int) {
 	if err != nil {
 		if errors.As(err, &chNineDbErrors) {
 			log.Fatal(err)
-		} else if errors.As(err, &chNineErrResult) {
-			if chNineErrResult != nil {
-				fmt.Println(chNineErrResult.Error())
-			}
-
 		} else {
-			fmt.Printf("error type: %T\n", err)
+			fmt.Printf("challenge nine error: %v\n", err.Error())
 		}
+
 	}
 
 	fmt.Println("Multiple table challenge finished.")
 
 	wg.Wait()
+}
+
+func runChallengeTen(ctx context.Context, db *sql.DB) {
+	var chTenDbErrors *customerrors.DBErr
+
+	err := challenges.Ten(challenges.ChallengeTenParams{
+		Ctx: ctx,
+		DB:  db,
+	})
+
+	if err != nil {
+		if errors.As(err, &chTenDbErrors) {
+			log.Fatal(err)
+		} else {
+			fmt.Printf("challenge ten error: %v\n", err.Error())
+		}
+	}
+
+	fmt.Println("Related Record challenge finished.")
+
 }

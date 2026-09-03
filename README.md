@@ -18,29 +18,36 @@ The repository currently explores:
 
 ```text
 .
-├── main.go                         # Selects and runs the current exercise
-├── docker-compose.yml               # Local PostgreSQL 17 service
-├── go.mod                          # Go module and dependencies
+├── main.go                    # Selects and runs the current exercise
+├── docker-compose.yml          # Local PostgreSQL 17 service
+├── go.mod                     # Go module and dependencies
 └── topics/
-    ├── syntax/
-    │   └── syntax.go                   # Go language fundamentals
-    └── transactions/
-        ├── Makefile                    # Migration shortcuts
-        ├── challenges/
-        │   ├── 1.go                    # Create related records atomically
-        │   ├── 2.go                    # Transfer money atomically
-        │   ├── 3.go                    # Simulate transaction failure and rollback
-        │   ├── 4.go                    # Transfer without transaction safeguards
-        │   ├── 5.go                    # Observe a non-repeatable read
-        │   ├── 6.go                    # Prevent a non-repeatable read
-        │   ├── 7.go                    # Observe a phantom read
-        │   ├── 8.go                    # Retry serializable transactions
-        │   └── models/                 # Shared challenge parameters
-        ├── database/
-        │   ├── database.go              # PostgreSQL connection
-        │   └── migrations/              # Versioned database schema
-        └── errors/
-            └── custom_errors.go         # Custom error types
+	├── syntax/
+	│   └── syntax.go          # Go language fundamentals
+	└── transactions/
+		├── challenges/
+		│   ├── 1.go           # Create related records atomically
+		│   ├── 2.go           # Transfer money atomically
+		│   ├── 3.go           # Simulate transaction failure and rollback
+		│   ├── 4.go           # Transfer without transaction safeguards
+		│   ├── 5.go           # Observe a non-repeatable read
+		│   ├── 6.go           # Prevent a non-repeatable read
+		│   ├── 7.go           # Observe a phantom read
+		│   ├── 8.go           # Retry serializable transactions
+		│   ├── 9.go           # Concurrent order intents
+		│   ├── 10.go          # Create a user, wallet, and profile atomically
+		│   ├── models/        # Shared challenge parameters
+		│   └── shared/        # CSV-backed challenge helpers
+		├── database/
+		│   ├── connection.go  # PostgreSQL connection
+		│   ├── queries/       # Application SQL queries
+		│   ├── pgstore/       # sqlc-generated Go accessors
+		│   └── migrations/    # Versioned database schema
+		├── errors/
+		│   └── custom_errors.go # Custom error types
+		└── data/
+			├── products.csv    # Product seed data
+			└── users.csv       # User seed data
 ```
 
 ## Topics
@@ -70,6 +77,12 @@ The schema is introduced incrementally:
    foreign key.
 3. `003_alter_wallets_table.sql` adds a database-level rule that prevents a
    negative balance.
+4. `004_create_products_table.sql` creates products.
+5. `005_create_orders_table.sql` creates orders.
+6. `006_order_items_table.sql` creates order items.
+7. `007_product_inventory_table.sql` adds product stock.
+8. `008_create_user_profile_table.sql` adds a profile related to a user and
+	wallet.
 
 ## Transaction challenges
 
@@ -223,6 +236,40 @@ can reject one of two conflicting transactions to preserve consistency, so the
 application must retry transient failures instead of treating them as permanent
 operation errors.
 
+### Challenge 9 — concurrent order intents and inventory
+
+[`9.go`](topics/transactions/challenges/9.go) generates order intents from the
+CSV fixtures and attempts to complete them concurrently using serializable
+transactions.
+
+It exercises:
+
+- loading users and products from CSV data;
+- creating orders and order items in a transaction;
+- decrementing product inventory atomically;
+- coordinating many purchase goroutines with a wait group and channel;
+- recognizing serialization failures and deadlocks; and
+- retrying transient failures with exponential backoff and jitter.
+
+The key lesson is **contention requires coordination**: concurrent purchases
+must protect shared inventory and retry when PostgreSQL detects a conflict.
+
+### Challenge 10 — create a user, wallet, and profile together
+
+[`10.go`](topics/transactions/challenges/10.go) selects a user from the CSV
+fixtures and creates that user, a random-balance wallet, and a profile in one
+transaction.
+
+It exercises:
+
+- composing generated `sqlc` queries through a transaction;
+- passing generated IDs from one insert to the next;
+- creating related records in dependency order; and
+- rolling back the whole operation when any step fails.
+
+The key lesson is **related writes share one boundary**: the user, wallet, and
+profile should either all be created or none should be persisted.
+
 ## Run from a fresh clone
 
 ### Prerequisites
@@ -256,7 +303,7 @@ be found.
 
 ### 4. Configure the local database
 
-Create `topics/transactions/.env` with the following values:
+Create `topics/transactions/database/migrations/.env` with the following values:
 
 ```dotenv
 DATABASE_HOST=localhost
@@ -266,38 +313,44 @@ DATABASE_USER=postgres
 DATABASE_PASSWORD=postgres
 ```
 
-These values intentionally match the connection string currently used by
-`topics/transactions/database/database.go`. The `.env` file is ignored by Git.
+These values are used by Docker Compose, Tern, and the migration helper. The
+database connection currently uses the same local PostgreSQL defaults directly
+in `topics/transactions/database/connection.go`. The `.env` file is ignored by
+Git.
 
 ### 5. Start PostgreSQL
 
 From the repository root:
 
 ```bash
-docker compose --env-file topics/transactions/.env up -d
+docker compose --env-file topics/transactions/database/migrations/.env up -d
 ```
 
 ### 6. Apply the schema migrations
 
 ```bash
-make -C topics/transactions run-migrations
+make migrations
 ```
 
 Check their status at any time with:
 
 ```bash
-make -C topics/transactions status
+make status
 ```
 
 ### 7. Prepare data for the default exercise
 
-`main.go` currently runs Challenge 8 with wallet IDs `1` and `2`. A new database
-therefore needs two users and two wallets. Both balances start at `600` so the
-two serializable transactions attempt conflicting updates and exercise the
-retry logic:
+`main.go` currently runs Challenge 10. It reads a random user from
+`topics/transactions/data/users.csv`, then creates that user, a wallet, and a
+profile. The migration-created tables are enough to run it; no manual seed
+insert is required.
+
+Challenges 1–8 use wallet IDs `1` and `2`. If you choose one of those exercises
+on a fresh database, create two users and two wallets first. Both balances start
+at `600` so the serializable challenge can exercise retry logic:
 
 ```bash
-docker compose --env-file topics/transactions/.env exec postgres \
+docker compose --env-file topics/transactions/database/migrations/.env exec postgres \
   psql -U postgres -d transactions_lab -c \
   "INSERT INTO users (name) VALUES ('Source User'), ('Target User'); INSERT INTO wallets (user_id, balance) VALUES (1, 600), (2, 600);"
 ```
@@ -313,16 +366,13 @@ output includes messages similar to:
 
 ```text
 Connected to PostgreSQL.
-Starting Serializable process...
-Tx-A running attempt 0...
-Tx-B running attempt 0...
-Serializable process finished!
+Running Challenge 10...
 ```
 
 You can inspect the result with:
 
 ```bash
-docker compose --env-file topics/transactions/.env exec postgres \
+docker compose --env-file topics/transactions/database/migrations/.env exec postgres \
   psql -U postgres -d transactions_lab \
   -c "SELECT id, user_id, balance FROM wallets ORDER BY id;"
 ```
@@ -485,6 +535,33 @@ if err := challenges.Eight(chEightParam, &wg); err != nil {
 wg.Wait()
 ```
 
+To run **Challenge 9**, configure `main.go` with the order-intent parameters:
+
+```go
+const numberOfOrderIntents = 50
+
+var wg sync.WaitGroup
+params := mdl.ChallengeNineParams{
+	Ctx:             ctx,
+	DB:              db,
+	WG:              &wg,
+	NumberOfIntents: numberOfOrderIntents,
+}
+if err := challenges.Nine(params); err != nil {
+	log.Fatal(err)
+}
+wg.Wait()
+```
+
+To run **Challenge 10**, configure `main.go` with:
+
+```go
+params := mdl.ChallengeTenParams{Ctx: ctx, DB: db}
+if err := challenges.Ten(params); err != nil {
+	log.Fatal(err)
+}
+```
+
 To run the **syntax examples**, import the package and call `syntax.Run()`:
 
 ```go
@@ -505,14 +582,27 @@ go test ./...
 go fmt ./...
 
 # Show migration status
-make -C topics/transactions status
+make status
 
 # Roll the database schema back to version 0 (destructive)
-make -C topics/transactions rollback-all
+make rollback-all
 
 # Stop PostgreSQL but retain its data volume
-docker compose --env-file topics/transactions/.env down
+docker compose --env-file topics/transactions/database/migrations/.env down
 
 # Stop PostgreSQL and delete the local database volume
-docker compose --env-file topics/transactions/.env down -v
+docker compose --env-file topics/transactions/database/migrations/.env down -v
+```
+
+The root `Makefile` also provides:
+
+```bash
+# Generate sqlc code after changing queries or schema
+make sql
+
+# Seed users and products from the CSV fixtures
+make db_fed
+
+# Roll back, migrate, and seed in one command
+make reset
 ```
